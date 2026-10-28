@@ -1,0 +1,2570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SEC Learners - UG Curriculum & Progress Dashboard</title>
+  <link rel="icon" type="image/png" href="saveetha_logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+  <script src="pdf.min.js"></script>
+  <script src="curriculum_data.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            heading: ['"Space Grotesk"', 'sans-serif'],
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace']
+          },
+          colors: {
+            paper: '#FAF7F0',
+            paperDark: '#F3EEDF',
+            coral: '#FF5A5F',
+            coralHover: '#E04A4E',
+            ink: '#18181B',
+            tagGreen: '#10B981',
+            tagBlue: '#1E3A8A',
+            tagAmber: '#D97706',
+            tagPurple: '#7C3AED',
+            tagRose: '#E11D48'
+          },
+          boxShadow: {
+            'brutal-sm': '2px 2px 0px 0px #18181B',
+            'brutal': '3px 3px 0px 0px #18181B',
+            'brutal-lg': '4px 4px 0px 0px #18181B',
+            'brutal-xl': '6px 6px 0px 0px #18181B'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @media print {
+      .no-print { display: none !important; }
+      .print-only { display: block !important; }
+      body { background: white !important; color: black !important; }
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #FAF7F0;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #18181B;
+      border-radius: 2px;
+    }
+  </style>
+</head>
+<body class="bg-[#FAF7F0] text-[#18181B] min-h-screen font-sans flex flex-col selection:bg-[#FF5A5F] selection:text-white antialiased">
+
+  <!-- TOP HEADER / NAVBAR (Styled like reference mockup) -->
+  <header class="bg-[#FAF7F0] border-b-2 border-[#18181B] sticky top-0 z-40 no-print py-4 sm:py-5 px-2 sm:px-4">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3 cursor-pointer group" onclick="goToSheetPicker()">
+        <img src="saveetha_logo.png" alt="Saveetha Engineering College Logo" class="w-12 h-12 object-contain shrink-0 group-hover:scale-105 transition-transform">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-heading font-extrabold text-xl tracking-tight text-[#18181B]">SEC Curriculum</span>
+            <span class="text-xs px-2 py-0.5 rounded-md font-bold bg-white border-2 border-[#18181B] text-[#18181B] shadow-brutal-sm">R19 & R24</span>
+          </div>
+          <p class="text-xs text-zinc-600 font-medium hidden sm:block">Flexible Choice Based Credit System (FCBCS)</p>
+        </div>
+      </div>
+
+      <!-- Center Nav Links -->
+      <nav class="hidden md:flex items-center gap-8 text-sm font-heading font-bold text-[#18181B]">
+        <button onclick="goToSheetPicker()" class="hover:text-[#FF5A5F] transition-colors">Find Curriculum</button>
+        <button onclick="quickOpenSheet('R2024-CSE')" class="hover:text-[#FF5A5F] transition-colors">CSE Dashboard</button>
+        <button onclick="quickOpenSheet('R2019-AI&DS')" class="hover:text-[#FF5A5F] transition-colors">AI & DS</button>
+        <button onclick="quickOpenSheet('Open Electives')" class="hover:text-[#FF5A5F] transition-colors">Open Electives</button>
+        <button onclick="quickOpenSheet('Minors')" class="hover:text-[#FF5A5F] transition-colors">Minors</button>
+      </nav>
+
+      <!-- Right Actions -->
+      <div class="flex items-center gap-2.5">
+        <button onclick="openMarksheetModal()" class="text-xs sm:text-sm font-heading font-extrabold px-3.5 py-1.5 rounded-lg bg-[#FF5A5F] hover:bg-[#E04A4E] text-white border-2 border-[#18181B] shadow-brutal-sm hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all flex items-center gap-1.5 cursor-pointer">
+          <i data-lucide="file-up" class="w-4 h-4"></i>
+          <span>Upload Marksheet</span>
+        </button>
+
+        <button id="navSheetBtn" onclick="goToSheetPicker()" class="hidden text-xs sm:text-sm font-heading font-bold px-3 py-1.5 rounded-lg bg-white border-2 border-[#18181B] shadow-brutal-sm hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all flex items-center gap-1.5 text-[#18181B]">
+          <i data-lucide="grid" class="w-4 h-4"></i>
+          <span>Switch Program</span>
+        </button>
+
+        <button onclick="window.print()" id="navPrintBtn" class="hidden text-xs sm:text-sm font-heading font-bold px-3 py-1.5 rounded-lg bg-[#FF5A5F] text-white border-2 border-[#18181B] shadow-brutal-sm hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all flex items-center gap-1.5">
+          <i data-lucide="printer" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Print / PDF</span>
+        </button>
+
+        <div class="w-9 h-9 rounded-full bg-[#FAF7F0] border-2 border-[#18181B] shadow-brutal-sm flex items-center justify-center text-[#18181B]" title="SEC Student Tracker">
+          <i data-lucide="user" class="w-4 h-4"></i>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- MAIN APP CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+
+    <!-- VIEW 1: SHEET PICKER (LANDING - RETRO NEO-BRUTALIST JOB BOARD STYLE) -->
+    <section id="sheetPickerView" class="space-y-10 animate-fadeIn">
+      
+      <!-- HERO BANNER (Directly mirrors "Find your Dream Job" layout) -->
+      <div class="text-center max-w-3xl mx-auto space-y-3 py-2">
+        <h1 class="text-3xl sm:text-5xl font-heading font-extrabold text-[#18181B] tracking-tight">
+          Find your Curriculum
+        </h1>
+        <p class="text-sm sm:text-base text-zinc-700 font-medium">
+          Looking for your department curriculum? Pick your regulation and batch to track credits & check graduation progress today.
+        </p>
+
+        <!-- Big Brutalist Search & Filter Inputs Row -->
+        <div class="pt-4 max-w-4xl mx-auto flex flex-col sm:flex-row items-center gap-3">
+          <!-- Keyword input -->
+          <div class="relative flex-1 w-full">
+            <i data-lucide="search" class="w-5 h-5 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+            <input 
+              type="text" 
+              id="sheetSearchInput" 
+              oninput="renderSheetCards()" 
+              placeholder="Search Department, Degree or Code (e.g. CSE, AI&DS, ECE)..." 
+              class="w-full pl-11 pr-4 py-3 bg-white border-2 border-[#18181B] rounded-lg text-sm font-semibold text-[#18181B] placeholder-zinc-500 shadow-brutal-sm focus:outline-hidden focus:ring-0"
+            >
+          </div>
+
+          <!-- Regulation Select box -->
+          <div class="relative w-full sm:w-60">
+            <i data-lucide="book-open" class="w-5 h-5 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+            <select 
+              id="sheetRegDropdown" 
+              onchange="setSheetFilter(this.value)" 
+              class="w-full pl-11 pr-8 py-3 bg-white border-2 border-[#18181B] rounded-lg text-sm font-bold text-[#18181B] shadow-brutal-sm focus:outline-hidden appearance-none cursor-pointer"
+            >
+              <option value="all">All Regulations</option>
+              <option value="R2024">R2024 Regulations</option>
+              <option value="R2019">R2019 Regulations</option>
+              <option value="2023">2023 Curriculums</option>
+              <option value="special">Minors & Electives</option>
+            </select>
+            <i data-lucide="chevron-down" class="w-4 h-4 text-zinc-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+          </div>
+
+          <!-- Coral Action Button -->
+          <button 
+            onclick="renderSheetCards()" 
+            class="w-full sm:w-auto px-7 py-3 bg-[#FF5A5F] hover:bg-[#E04A4E] text-white font-heading font-extrabold text-sm rounded-lg border-2 border-[#18181B] shadow-brutal hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-brutal-sm active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center justify-center gap-2"
+          >
+            <span>Search</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- MAIN CONTENT ROW: LEFT FILTERS SIDEBAR + RIGHT CURRICULUM CARDS -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- LEFT SIDEBAR: FILTERS BOX (Exact match to reference image sidebar) -->
+        <aside class="lg:col-span-4 space-y-6">
+          <div class="bg-[#FAF7F0] border-2 border-[#18181B] rounded-xl shadow-brutal-lg overflow-hidden">
+            <!-- Sidebar Header -->
+            <div class="p-3.5 bg-white border-b-2 border-[#18181B] flex items-center justify-between font-heading font-bold text-base text-[#18181B]">
+              <span>Filters</span>
+              <i data-lucide="chevron-down" class="w-4 h-4"></i>
+            </div>
+
+            <div class="p-4 space-y-5 text-xs font-semibold text-[#18181B]">
+              <!-- Filter Section 1: Regulation Category -->
+              <div class="space-y-2">
+                <span class="font-heading font-extrabold text-xs uppercase tracking-wider text-zinc-600 block">Regulation</span>
+                <div class="space-y-1.5">
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="regRadio" value="all" checked onchange="setSheetFilter('all')" class="w-4 h-4 accent-[#FF5A5F] border-2 border-[#18181B]">
+                    <span>All Programs (33 Total)</span>
+                  </label>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="regRadio" value="R2024" onchange="setSheetFilter('R2024')" class="w-4 h-4 accent-[#FF5A5F] border-2 border-[#18181B]">
+                    <span>R2024 Regulations (UG 2024-2028)</span>
+                  </label>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="regRadio" value="R2019" onchange="setSheetFilter('R2019')" class="w-4 h-4 accent-[#FF5A5F] border-2 border-[#18181B]">
+                    <span>R2019 Regulations (UG 2022-2026/2027)</span>
+                  </label>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="regRadio" value="2023" onchange="setSheetFilter('2023')" class="w-4 h-4 accent-[#FF5A5F] border-2 border-[#18181B]">
+                    <span>2023 Batches (CSE & IT)</span>
+                  </label>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="regRadio" value="special" onchange="setSheetFilter('special')" class="w-4 h-4 accent-[#FF5A5F] border-2 border-[#18181B]">
+                    <span>Minors & Open Electives</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="border-t-2 border-[#18181B] pt-4 space-y-2">
+                <span class="font-heading font-extrabold text-xs uppercase tracking-wider text-zinc-600 block">Student Entry Mode</span>
+                <div class="grid grid-cols-2 gap-2 text-center">
+                  <div class="p-2 bg-white border-2 border-[#18181B] rounded-lg shadow-brutal-sm">
+                    <span class="block font-bold">Regular (4 Yrs)</span>
+                    <span class="text-3xs text-zinc-500">156 - 170 Credits</span>
+                  </div>
+                  <div class="p-2 bg-white border-2 border-[#18181B] rounded-lg shadow-brutal-sm">
+                    <span class="block font-bold">Lateral (3 Yrs)</span>
+                    <span class="text-3xs text-zinc-500">119 - 137 Credits</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick Info Badge -->
+              <div class="border-t-2 border-[#18181B] pt-4 space-y-1.5 text-2xs text-zinc-600">
+                <p class="font-bold text-[#18181B]">✓ Live LocalStorage Persistence</p>
+                <p>Checked courses and calculated CGPA save automatically in your browser.</p>
+              </div>
+
+            </div>
+          </div>
+        </aside>
+
+        <!-- RIGHT COLUMN: RESULTS COUNT & CARD LIST (Matches job listings in reference) -->
+        <div class="lg:col-span-8 space-y-5">
+          <!-- Pinned Quick Resume Banner (if student has recent progress) -->
+          <div id="quickResumeBanner" class="hidden"></div>
+
+          <!-- Department Group Tabs & View Mode Row -->
+          <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between pb-1">
+            <div class="flex flex-wrap gap-1.5" id="deptGroupTabs">
+              <button onclick="setDeptGroup('all')" data-dept="all" class="dept-tab-btn active px-3 py-1.5 rounded-lg text-xs font-heading font-bold bg-[#18181B] text-white border-2 border-[#18181B] shadow-brutal-sm">
+                All (33)
+              </button>
+              <button onclick="setDeptGroup('computing')" data-dept="computing" class="dept-tab-btn px-3 py-1.5 rounded-lg text-xs font-heading font-bold bg-white text-[#18181B] border-2 border-[#18181B] hover:bg-zinc-100">
+                Computing & IT (14)
+              </button>
+              <button onclick="setDeptGroup('circuits')" data-dept="circuits" class="dept-tab-btn px-3 py-1.5 rounded-lg text-xs font-heading font-bold bg-white text-[#18181B] border-2 border-[#18181B] hover:bg-zinc-100">
+                Circuits & Bio (9)
+              </button>
+              <button onclick="setDeptGroup('core')" data-dept="core" class="dept-tab-btn px-3 py-1.5 rounded-lg text-xs font-heading font-bold bg-white text-[#18181B] border-2 border-[#18181B] hover:bg-zinc-100">
+                Mech & Civil (7)
+              </button>
+              <button onclick="setDeptGroup('special')" data-dept="special" class="dept-tab-btn px-3 py-1.5 rounded-lg text-xs font-heading font-bold bg-white text-[#18181B] border-2 border-[#18181B] hover:bg-zinc-100">
+                Minors & OE (3)
+              </button>
+            </div>
+
+            <!-- View Toggle & Result Counter -->
+            <div class="flex items-center gap-1.5 self-end sm:self-auto">
+              <span id="resultsCountPill" class="text-xs font-heading font-bold px-2.5 py-1 rounded-md bg-white border-2 border-[#18181B] shadow-brutal-sm">
+                33 results
+              </span>
+              <button onclick="toggleCardLayout('list')" id="btnLayoutList" title="List View" class="p-1.5 rounded-md border-2 border-[#18181B] bg-[#18181B] text-white cursor-pointer">
+                <i data-lucide="list" class="w-4 h-4"></i>
+              </button>
+              <button onclick="toggleCardLayout('grid')" id="btnLayoutGrid" title="2-Column Grid View" class="p-1.5 rounded-md border-2 border-[#18181B] bg-white text-[#18181B] cursor-pointer">
+                <i data-lucide="layout-grid" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Cards List -->
+          <div id="sheetGrid" class="space-y-4">
+            <!-- Dynamically populated by JS in exact Neo-Brutalist Job Card design -->
+          </div>
+
+          <!-- Pagination Controls (eliminates endless scrolling) -->
+          <div id="paginationContainer" class="pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-t-2 border-[#18181B]">
+            <div class="text-xs font-heading font-bold text-zinc-600">
+              <span id="paginationInfo">Showing 1-6 of 33 programs</span>
+            </div>
+            <div class="flex items-center gap-1.5" id="paginationButtons">
+              <!-- Dynamically populated page buttons -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- VIEW 2: DEDICATED SHEET DASHBOARD (ADAPTED NEO-BRUTALIST THEME) -->
+    <section id="sheetDashboardView" class="hidden space-y-8 animate-fadeIn">
+      
+      <!-- Top Header Card -->
+      <div class="bg-white rounded-xl p-5 sm:p-6 border-2 border-[#18181B] shadow-brutal-lg flex flex-col lg:flex-row gap-5 items-start lg:items-center justify-between">
+        <div class="space-y-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="goToSheetPicker()" class="inline-flex items-center gap-1 text-xs font-heading font-bold text-[#18181B] bg-white hover:bg-zinc-100 border-2 border-[#18181B] shadow-brutal-sm px-2.5 py-1 rounded-md transition-all mr-1">
+              <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+              <span>All Curriculums</span>
+            </button>
+            <span id="dashRegBadge" class="text-xs px-2.5 py-1 rounded-md font-bold bg-[#10B981] text-white border-2 border-[#18181B]"></span>
+            <span id="dashSheetTypeBadge" class="text-xs px-2.5 py-1 rounded-md font-bold bg-[#FAF7F0] text-[#18181B] border-2 border-[#18181B]"></span>
+            <span id="dashBatchBadge" class="text-xs px-2.5 py-1 rounded-md font-bold bg-[#FF5A5F] text-white border-2 border-[#18181B]"></span>
+          </div>
+          <h2 id="dashDeptTitle" class="text-2xl sm:text-3xl font-heading font-extrabold text-[#18181B] tracking-tight"></h2>
+          <p id="dashDegreeSub" class="text-xs sm:text-sm text-zinc-600 font-semibold"></p>
+        </div>
+
+        <!-- Student Mode, Batch Selector & Quick Switcher -->
+        <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+          <!-- Batch Selector Dropdown -->
+          <div id="batchSelectContainer" class="hidden relative">
+            <select id="batchSelect" onchange="setStudentBatch(this.value)" class="text-xs font-heading font-bold bg-white border-2 border-[#18181B] rounded-lg px-3 py-2 pr-8 text-[#18181B] shadow-brutal-sm focus:outline-hidden cursor-pointer">
+              <!-- populated by JS -->
+            </select>
+          </div>
+
+          <!-- Student Mode Toggle (Regular vs Lateral Entry) -->
+          <div id="entryModeContainer" class="flex items-center bg-[#FAF7F0] p-1 rounded-lg border-2 border-[#18181B] text-xs font-heading font-bold">
+            <button id="btnRegularMode" onclick="setStudentMode('regular')" class="px-3 py-1.5 rounded-md transition-all border-2 border-[#18181B] bg-white text-[#18181B] shadow-brutal-sm">
+              Regular (4 Yrs)
+            </button>
+            <button id="btnLateralMode" onclick="setStudentMode('lateral')" class="px-3 py-1.5 rounded-md transition-all text-zinc-700 hover:text-[#18181B] border-2 border-transparent">
+              Lateral Entry (3 Yrs)
+            </button>
+          </div>
+
+          <!-- Quick Switcher Dropdown -->
+          <div class="relative">
+            <select id="sheetQuickSelect" onchange="switchSheetDirectly(this.value)" class="text-xs font-heading font-bold bg-white border-2 border-[#18181B] rounded-lg px-3 py-2 pr-8 text-[#18181B] shadow-brutal-sm focus:outline-hidden cursor-pointer">
+              <!-- populated by JS -->
+            </select>
+          </div>
+
+          <!-- Marksheet Upload / Reset / Actions -->
+          <div class="flex items-center gap-2">
+            <button onclick="openMarksheetModal()" title="Upload Semester Marksheet (PDF)" class="px-3 py-2 rounded-lg bg-[#FF5A5F] hover:bg-[#E04A4E] text-white border-2 border-[#18181B] shadow-brutal-sm hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none font-heading font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer">
+              <i data-lucide="file-up" class="w-4 h-4"></i>
+              <span class="hidden sm:inline">Upload Marksheet</span>
+            </button>
+            <button onclick="confirmResetCurrentSheet()" title="Reset saved progress for this curriculum" class="p-2 rounded-lg bg-white border-2 border-[#18181B] shadow-brutal-sm hover:bg-rose-100 text-[#18181B] transition-all cursor-pointer">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+            </button>
+            <button onclick="exportSheetProgressJSON()" title="Export Progress (JSON)" class="p-2 rounded-lg bg-white border-2 border-[#18181B] shadow-brutal-sm hover:bg-zinc-100 text-[#18181B] transition-all cursor-pointer">
+              <i data-lucide="download" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- KEY METRICS STATS CARDS (Neo-Brutalist White Cards with black borders & hard shadows) -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+        <!-- Card 1: Total Credits Earned -->
+        <div class="bg-white p-5 rounded-xl border-2 border-[#18181B] shadow-brutal flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between text-zinc-600 text-xs font-heading font-extrabold uppercase tracking-wider mb-1.5">
+              <span>Credits Earned</span>
+              <i data-lucide="award" class="w-4 h-4 text-[#FF5A5F]"></i>
+            </div>
+            <div class="flex items-baseline gap-2">
+              <span id="metricCreditsEarned" class="text-3xl sm:text-4xl font-heading font-black text-[#18181B]">0</span>
+              <span id="metricCreditsTarget" class="text-xs sm:text-sm font-bold text-zinc-500">/ 166 Target</span>
+            </div>
+          </div>
+          <!-- Hard brutalist progress bar -->
+          <div class="mt-4">
+            <div class="w-full bg-[#FAF7F0] border-2 border-[#18181B] rounded-full h-3 overflow-hidden p-0.5">
+              <div id="metricCreditProgressBar" class="bg-[#10B981] h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+            <div class="mt-2 flex items-center justify-between text-2xs font-bold text-zinc-600">
+              <span id="metricCreditPercent">0% Completed</span>
+              <span id="metricCreditsRemaining">166 needed</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Courses Completed -->
+        <div class="bg-white p-5 rounded-xl border-2 border-[#18181B] shadow-brutal flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between text-zinc-600 text-xs font-heading font-extrabold uppercase tracking-wider mb-1.5">
+              <span>Courses Completed</span>
+              <i data-lucide="check-circle-2" class="w-4 h-4 text-[#10B981]"></i>
+            </div>
+            <div class="flex items-baseline gap-2">
+              <span id="metricCoursesCompleted" class="text-3xl sm:text-4xl font-heading font-black text-[#10B981]">0</span>
+              <span id="metricCoursesTotal" class="text-xs sm:text-sm font-bold text-zinc-500">/ 0 Total</span>
+            </div>
+          </div>
+          <div class="mt-4 flex items-center gap-3 text-2xs font-bold text-zinc-700">
+            <span class="inline-flex items-center gap-1 text-[#D97706]">
+              <span class="w-2.5 h-2.5 rounded-full bg-[#D97706] border border-[#18181B]"></span>
+              <span id="metricCoursesInProgress">0 In Progress</span>
+            </span>
+            <span class="inline-flex items-center gap-1 text-zinc-500">
+              <span class="w-2.5 h-2.5 rounded-full bg-zinc-300 border border-[#18181B]"></span>
+              <span id="metricCoursesPending">0 Pending</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Card 3: Estimated CGPA -->
+        <div class="bg-white p-5 rounded-xl border-2 border-[#18181B] shadow-brutal flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between text-zinc-600 text-xs font-heading font-extrabold uppercase tracking-wider mb-1.5">
+              <span>Estimated CGPA</span>
+              <i data-lucide="sparkles" class="w-4 h-4 text-[#D97706]"></i>
+            </div>
+            <div class="flex items-baseline gap-2">
+              <span id="metricEstimatedCGPA" class="text-3xl sm:text-4xl font-heading font-black text-[#18181B]">-</span>
+              <span class="text-xs sm:text-sm font-bold text-zinc-500">/ 10.0 Scale</span>
+            </div>
+          </div>
+          <p id="metricGradedCreditsNotice" class="mt-4 text-2xs font-bold text-zinc-500">
+            Based on completed graded courses
+          </p>
+        </div>
+
+        <!-- Card 4: Degree Readiness Status -->
+        <div class="bg-white p-5 rounded-xl border-2 border-[#18181B] shadow-brutal flex flex-col justify-between">
+          <div class="flex items-center justify-between text-zinc-600 text-xs font-heading font-extrabold uppercase tracking-wider mb-1.5">
+            <span>Degree Status</span>
+            <i data-lucide="graduation-cap" class="w-4 h-4 text-[#2563EB]"></i>
+          </div>
+          <div>
+            <div id="metricDegreeStatusBadge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-heading font-bold bg-[#FAF7F0] border-2 border-[#18181B] text-[#18181B]">
+              <span>Not Started</span>
+            </div>
+            <p id="metricDegreeStatusDesc" class="mt-2 text-2xs font-semibold text-zinc-600">
+              Check off completed courses below
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEMESTER-WISE MARKSHEET VAULT (SEMESTERS 1 TO 8) -->
+      <div class="space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="text-lg sm:text-xl font-heading font-extrabold text-[#18181B] tracking-tight">Semester Marksheets & SGPA (Semesters 1 – 8)</h3>
+              <span id="semestersCountBadge" class="text-2xs font-bold px-2 py-0.5 rounded-md bg-white border-2 border-[#18181B] shadow-brutal-sm text-[#18181B]">0 of 8 Uploaded</span>
+            </div>
+            <p class="text-xs text-zinc-600 font-medium">Upload semester marksheets individually to track credit flow, SGPA, and cumulative progress</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="openMarksheetModalForSem(null)" class="text-xs font-heading font-bold px-3.5 py-1.5 rounded-lg bg-[#FF5A5F] hover:bg-[#E04A4E] text-white border-2 border-[#18181B] shadow-brutal-sm hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all flex items-center gap-1.5 cursor-pointer">
+              <i data-lucide="file-up" class="w-3.5 h-3.5"></i>
+              <span>Upload Semester Marksheet</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 8 Semester Cards Grid (Sem 1 to Sem 8) -->
+        <div id="semesterCardsGrid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+          <!-- Dynamically populated by JS: Sem 1 to Sem 8 cards -->
+        </div>
+      </div>
+
+      <!-- CATEGORY CREDIT AUDIT SECTION (Exact category breakdown) -->
+      <div class="space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div>
+            <h3 class="text-lg sm:text-xl font-heading font-extrabold text-[#18181B] tracking-tight">Category Credit Audit</h3>
+            <p class="text-xs text-zinc-600 font-medium">Click any category card to filter courses below</p>
+          </div>
+          <button onclick="clearCategoryFilter()" id="btnClearCategoryFilter" class="hidden text-xs font-heading font-bold bg-white text-[#18181B] border-2 border-[#18181B] shadow-brutal-sm px-3 py-1 rounded-lg self-start sm:self-auto">
+            Show All Categories
+          </button>
+        </div>
+
+        <div id="categoryCardsGrid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+          <!-- Dynamically populated category cards -->
+        </div>
+      </div>
+
+      <!-- VISUAL CHARTS ACCORDION (Brutalist style) -->
+      <div class="bg-white rounded-xl border-2 border-[#18181B] shadow-brutal overflow-hidden">
+        <button onclick="toggleChartsVisibility()" class="w-full px-5 py-3.5 flex items-center justify-between text-left hover:bg-[#FAF7F0] transition-colors">
+          <div class="flex items-center gap-2.5 font-heading font-extrabold text-sm sm:text-base text-[#18181B]">
+            <i data-lucide="bar-chart-2" class="w-5 h-5 text-[#FF5A5F]"></i>
+            <span>Visual Credit Analytics</span>
+            <span class="text-2xs px-2 py-0.5 rounded-md font-bold bg-[#FAF7F0] border border-[#18181B] text-[#18181B]">Charts</span>
+          </div>
+          <i id="chartToggleIcon" data-lucide="chevron-down" class="w-4 h-4 text-[#18181B] transition-transform"></i>
+        </button>
+
+        <div id="chartsContainer" class="p-5 border-t-2 border-[#18181B] grid grid-cols-1 md:grid-cols-2 gap-6 hidden bg-[#FAF7F0]">
+          <div class="bg-white p-4 rounded-lg border-2 border-[#18181B] shadow-brutal-sm space-y-2">
+            <h4 class="text-xs font-heading font-extrabold uppercase text-[#18181B]">Credits Earned vs Target by Category</h4>
+            <div class="h-60 relative">
+              <canvas id="categoryBarChart"></canvas>
+            </div>
+          </div>
+          <div class="bg-white p-4 rounded-lg border-2 border-[#18181B] shadow-brutal-sm space-y-2">
+            <h4 class="text-xs font-heading font-extrabold uppercase text-[#18181B]">Course Completion Status</h4>
+            <div class="h-60 relative flex items-center justify-center">
+              <canvas id="statusDoughnutChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COURSE CHECKLIST & FILTER SECTION -->
+      <div class="space-y-4">
+        <div class="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+          <div>
+            <h3 class="text-lg sm:text-xl font-heading font-extrabold text-[#18181B] tracking-tight">Curriculum Course Checklist</h3>
+            <p id="courseTableSubtitle" class="text-xs text-zinc-600 font-medium">Mark courses Completed or In Progress to update credit totals</p>
+          </div>
+
+          <!-- Quick Batch Actions -->
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="batchMarkCoreCompleted()" class="text-2xs sm:text-xs font-heading font-bold px-3 py-1.5 rounded-lg bg-white border-2 border-[#18181B] shadow-brutal-sm hover:translate-x-[1px] hover:translate-y-[1px] text-[#18181B] transition-all flex items-center gap-1">
+              <i data-lucide="check-check" class="w-3.5 h-3.5 text-[#10B981]"></i>
+              <span>Mark Core Completed</span>
+            </button>
+            <button onclick="batchMark1stYearCompleted()" class="text-2xs sm:text-xs font-heading font-bold px-3 py-1.5 rounded-lg bg-white border-2 border-[#18181B] shadow-brutal-sm hover:translate-x-[1px] hover:translate-y-[1px] text-[#18181B] transition-all flex items-center gap-1">
+              <i data-lucide="bookmark-check" class="w-3.5 h-3.5 text-[#FF5A5F]"></i>
+              <span>Mark 1st Year Completed</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Controls Row -->
+        <div class="bg-white p-4 rounded-xl border-2 border-[#18181B] shadow-brutal flex flex-col lg:flex-row gap-3 items-center justify-between">
+          <!-- Course Search Input -->
+          <div class="relative w-full lg:w-80">
+            <i data-lucide="search" class="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2"></i>
+            <input 
+              type="text" 
+              id="courseSearchInput" 
+              oninput="renderCourseTable()" 
+              placeholder="Search course title or code (e.g. 19CS301, Python)..." 
+              class="w-full pl-9 pr-3 py-2 text-xs bg-[#FAF7F0] border-2 border-[#18181B] rounded-lg font-semibold text-[#18181B] focus:outline-hidden"
+            >
+          </div>
+
+          <!-- Status Filter Buttons -->
+          <div class="flex items-center gap-1.5 w-full lg:w-auto overflow-x-auto custom-scrollbar pb-1 lg:pb-0">
+            <span class="text-2xs font-heading font-extrabold uppercase text-zinc-600 mr-1 hidden sm:inline">Status:</span>
+            <button onclick="setCourseStatusFilter('all')" data-status="all" class="course-status-btn active px-3 py-1 rounded-md text-xs font-heading font-bold bg-[#18181B] text-white border-2 border-[#18181B]">
+              All
+            </button>
+            <button onclick="setCourseStatusFilter('completed')" data-status="completed" class="course-status-btn px-3 py-1 rounded-md text-xs font-heading font-bold bg-white text-[#18181B] border-2 border-[#18181B] hover:bg-zinc-100">
+              Completed
+            </button>
+            <button onclick="setCourseStatusFilter('in_progress')" data-status="in_progress" class="course-status-btn px-3 py-1 rounded-md text-xs font-heading font-bold bg-white text-[#18181B] border-2 border-[#18181B] hover:bg-zinc-100">
+              In Progress
+            </button>
+            <button onclick="setCourseStatusFilter('pending')" data-status="pending" class="course-status-btn px-3 py-1 rounded-md text-xs font-heading font-bold bg-white text-[#18181B] border-2 border-[#18181B] hover:bg-zinc-100">
+              Not Started
+            </button>
+          </div>
+
+          <!-- Course Type Filter -->
+          <div class="flex items-center gap-2 w-full lg:w-auto justify-end">
+            <select id="courseTypeFilter" onchange="renderCourseTable()" class="text-xs font-heading font-bold bg-[#FAF7F0] border-2 border-[#18181B] rounded-lg px-3 py-2 text-[#18181B] focus:outline-hidden cursor-pointer">
+              <option value="all">All Course Types</option>
+              <option value="theory">Theory</option>
+              <option value="tip">Integrated / TIP</option>
+              <option value="practical">Practical / Lab</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Course Table Card (High contrast crisp design) -->
+        <div class="bg-white rounded-xl border-2 border-[#18181B] shadow-brutal overflow-hidden">
+          <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-[#FAF7F0] border-b-2 border-[#18181B] text-2xs uppercase tracking-wider text-[#18181B] font-heading font-extrabold">
+                  <th class="py-3 px-3 w-14 text-center">Status</th>
+                  <th class="py-3 px-2 w-28">Grade</th>
+                  <th class="py-3 px-2 w-12 text-center">S.No</th>
+                  <th class="py-3 px-2 w-24">Category</th>
+                  <th class="py-3 px-3 w-32">Course Code</th>
+                  <th class="py-3 px-4 min-w-[240px]">Course Title</th>
+                  <th class="py-3 px-3 w-28">Prerequisite</th>
+                  <th class="py-3 px-2 w-20 text-center">Credits</th>
+                  <th class="py-3 px-3 w-28">Type</th>
+                  <th class="py-3 px-3 min-w-[150px]">Remarks</th>
+                </tr>
+              </thead>
+              <tbody id="courseTableBody" class="divide-y-2 divide-zinc-200">
+                <!-- populated by JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Empty State Notice -->
+          <div id="courseTableEmpty" class="hidden p-12 text-center space-y-2 bg-[#FAF7F0]">
+            <i data-lucide="search-x" class="w-8 h-8 text-zinc-500 mx-auto"></i>
+            <p class="text-sm font-heading font-bold text-[#18181B]">No courses match your filter criteria</p>
+            <p class="text-xs text-zinc-600">Try clearing the search query or selecting "All Categories"</p>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- MARKSHEET UPLOAD & INFERENCE MODAL -->
+  <div id="marksheetModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-2xs flex items-center justify-center p-4 hidden">
+    <div class="bg-[#FAF7F0] border-2 border-[#18181B] shadow-brutal-xl rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden animate-fadeIn">
+      <!-- Modal Header -->
+      <div class="p-5 bg-white border-b-2 border-[#18181B] flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-lg bg-[#FF5A5F] border-2 border-[#18181B] shadow-brutal-sm flex items-center justify-center text-white">
+            <i data-lucide="file-up" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-heading font-extrabold text-lg text-[#18181B] leading-tight">Upload Semester Marksheet</h3>
+            <p class="text-xs text-zinc-600 font-medium">Infers passed courses, grades & credits directly from your official SEC marksheet PDF</p>
+          </div>
+        </div>
+        <button onclick="closeMarksheetModal()" class="w-8 h-8 rounded-lg bg-white border-2 border-[#18181B] shadow-brutal-sm flex items-center justify-center text-[#18181B] hover:bg-rose-100 transition-all cursor-pointer font-bold">
+          ✕
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6">
+        
+        <!-- Step 0: Semester Target Selection (Semesters 1 to 8) -->
+        <div class="bg-white p-3.5 rounded-xl border-2 border-[#18181B] shadow-brutal-sm space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-heading font-extrabold text-xs uppercase tracking-wider text-[#18181B]">Assign Marksheet To Semester:</span>
+            <span id="detectedSemBadge" class="text-3xs font-bold px-2 py-0.5 rounded-md bg-[#FAF7F0] border border-[#18181B] text-[#18181B]">Semester 6 Selected</span>
+          </div>
+          <div class="grid grid-cols-4 sm:grid-cols-8 gap-1.5" id="modalSemSelectorPills">
+            <!-- 8 semester buttons: Sem 1 to Sem 8 rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Step 1: Upload Dropzone Area -->
+        <div id="marksheetDropzone" ondragover="handleDropzoneDragOver(event)" ondragleave="handleDropzoneDragLeave(event)" ondrop="handleDropzoneDrop(event)" class="border-2 border-dashed border-[#18181B] bg-white rounded-xl p-8 text-center space-y-4 hover:bg-[#FAF7F0] transition-colors cursor-pointer shadow-brutal-sm" onclick="triggerFileInput()">
+          <input type="file" id="marksheetFileInput" accept="application/pdf" class="hidden" onchange="handleMarksheetFileSelect(event)">
+          <div class="w-14 h-14 mx-auto rounded-xl bg-[#FAF7F0] border-2 border-[#18181B] shadow-brutal-sm flex items-center justify-center text-[#18181B]">
+            <i data-lucide="upload-cloud" class="w-7 h-7 text-[#FF5A5F]"></i>
+          </div>
+          <div class="space-y-1">
+            <p class="font-heading font-extrabold text-base text-[#18181B]">Drop your semester marksheet PDF here</p>
+            <p class="text-xs text-zinc-600 font-medium">Supports official Saveetha Engineering College End Semester PDFs</p>
+          </div>
+          <div class="pt-2 flex flex-wrap items-center justify-center gap-3">
+            <button type="button" onclick="event.stopPropagation(); triggerFileInput();" class="px-5 py-2.5 bg-[#FF5A5F] hover:bg-[#E04A4E] text-white font-heading font-extrabold text-xs rounded-lg border-2 border-[#18181B] shadow-brutal-sm hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all cursor-pointer">
+              Browse PDF File
+            </button>
+            <button type="button" onclick="event.stopPropagation(); loadSampleMarksheet();" class="px-4 py-2.5 bg-white hover:bg-zinc-100 text-[#18181B] font-heading font-bold text-xs rounded-lg border-2 border-[#18181B] shadow-brutal-sm hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all cursor-pointer flex items-center gap-1.5">
+              <i data-lucide="file-check-2" class="w-4 h-4 text-[#10B981]"></i>
+              <span>Test with 6th Sem Marksheet</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Error Message Card (Shown on error) -->
+        <div id="marksheetErrorBox" class="hidden p-4 bg-rose-50 border-2 border-[#E11D48] rounded-xl text-xs space-y-2">
+          <div class="flex items-center gap-2 font-heading font-bold text-[#E11D48]">
+            <i data-lucide="alert-circle" class="w-4 h-4"></i>
+            <span>Marksheet Parsing Error</span>
+          </div>
+          <p id="marksheetErrorText" class="text-zinc-700 font-medium"></p>
+          <button type="button" onclick="resetMarksheetModalState()" class="px-3 py-1 bg-white border border-[#E11D48] text-[#E11D48] rounded font-bold hover:bg-rose-100 transition-colors">
+            Try Again
+          </button>
+        </div>
+
+        <!-- Step 2: Loading State -->
+        <div id="marksheetLoading" class="hidden py-12 text-center space-y-3">
+          <div class="w-12 h-12 mx-auto rounded-lg bg-[#FF5A5F] border-2 border-[#18181B] shadow-brutal-sm flex items-center justify-center text-white animate-bounce">
+            <i data-lucide="loader" class="w-6 h-6 animate-spin"></i>
+          </div>
+          <p class="font-heading font-extrabold text-base text-[#18181B]">Parsing marksheet & inferring course results...</p>
+          <p class="text-xs text-zinc-600">Extracting course codes, grades, credits, and matching against curriculum</p>
+        </div>
+
+        <!-- Step 3: Inference Results & Review Area -->
+        <div id="marksheetInferenceResults" class="hidden space-y-5">
+          <!-- Student Metadata Card -->
+          <div class="bg-white rounded-xl p-4 sm:p-5 border-2 border-[#18181B] shadow-brutal space-y-3">
+            <div class="flex items-center justify-between border-b-2 border-zinc-100 pb-2">
+              <span class="font-heading font-extrabold text-xs uppercase tracking-wider text-zinc-500">Inferred Student Profile</span>
+              <div class="flex items-center gap-1.5">
+                <span id="inferSemesterBadge" class="text-2xs font-heading font-extrabold px-2.5 py-0.5 rounded-md bg-[#FF5A5F] text-white border border-[#18181B]">Semester 6</span>
+                <span id="inferSGPABadge" class="text-2xs font-heading font-extrabold px-2.5 py-0.5 rounded-md bg-[#10B981] text-white border border-[#18181B]">SGPA: 8.61</span>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div>
+                <span class="text-zinc-500 block text-2xs font-bold uppercase">Student Name</span>
+                <span id="inferStudentName" class="font-heading font-black text-sm text-[#18181B]"></span>
+              </div>
+              <div>
+                <span class="text-zinc-500 block text-2xs font-bold uppercase">Registration Number</span>
+                <span id="inferRegNo" class="font-mono font-bold text-sm text-[#18181B]"></span>
+              </div>
+              <div>
+                <span class="text-zinc-500 block text-2xs font-bold uppercase">Program</span>
+                <span id="inferProgram" class="font-bold text-xs text-[#18181B]"></span>
+              </div>
+              <div>
+                <span class="text-zinc-500 block text-2xs font-bold uppercase">Credits In Marksheet</span>
+                <span id="inferCredits" class="font-bold text-xs text-[#10B981]"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Suggested Curriculum Banner -->
+          <div id="inferProgramBanner" class="p-3.5 bg-[#EFF6FF] border-2 border-[#18181B] rounded-xl shadow-brutal-sm flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-heading font-extrabold text-[#18181B]">Target Curriculum:</span>
+              <span id="inferTargetSheetBadge" class="text-xs font-bold px-2 py-0.5 rounded-md bg-white border border-[#18181B] text-[#18181B]"></span>
+            </div>
+            <span class="text-2xs font-bold text-zinc-600">Auto-detected from program</span>
+          </div>
+
+          <!-- Matched Courses Table -->
+          <div class="bg-white rounded-xl border-2 border-[#18181B] shadow-brutal overflow-hidden">
+            <div class="p-3 bg-[#FAF7F0] border-b-2 border-[#18181B] flex items-center justify-between">
+              <span class="font-heading font-extrabold text-xs text-[#18181B]" id="inferCoursesCountTitle">Courses Inferred</span>
+              <span class="text-2xs font-bold px-2 py-0.5 rounded-md bg-[#10B981] text-white border border-[#18181B]">Ready to Apply</span>
+            </div>
+            <div class="overflow-x-auto custom-scrollbar max-h-64">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-white border-b border-zinc-200 text-3xs font-heading font-extrabold uppercase text-zinc-500">
+                    <th class="py-2 px-3">Code</th>
+                    <th class="py-2 px-3">Course Title</th>
+                    <th class="py-2 px-2 text-center">Grade</th>
+                    <th class="py-2 px-2 text-center">Credits</th>
+                    <th class="py-2 px-2">Category</th>
+                    <th class="py-2 px-3">Match Status</th>
+                  </tr>
+                </thead>
+                <tbody id="inferCoursesTableBody" class="divide-y divide-zinc-100 font-semibold">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Accumulate Options & Action Buttons -->
+          <div class="pt-2 space-y-3">
+            <label class="flex items-center gap-2 text-xs font-bold text-[#18181B] cursor-pointer">
+              <input type="checkbox" id="chkAccumulateProgress" checked class="w-4 h-4 accent-[#FF5A5F] border-2 border-[#18181B]">
+              <span>Accumulate progress (keep existing completed courses from other semesters)</span>
+            </label>
+
+            <div class="flex items-center justify-end gap-3 pt-2">
+              <button type="button" onclick="closeMarksheetModal()" class="px-4 py-2.5 bg-white text-[#18181B] font-heading font-bold text-xs rounded-lg border-2 border-[#18181B] shadow-brutal-sm hover:bg-zinc-100 transition-all cursor-pointer">
+                Cancel
+              </button>
+              <button type="button" onclick="applyMarksheetProgress()" class="px-6 py-2.5 bg-[#FF5A5F] hover:bg-[#E04A4E] text-white font-heading font-extrabold text-xs rounded-lg border-2 border-[#18181B] shadow-brutal hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-brutal-sm transition-all cursor-pointer flex items-center gap-1.5">
+                <i data-lucide="check" class="w-4 h-4"></i>
+                <span>Apply to Curriculum & Track Progress</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="bg-[#FAF7F0] border-t-2 border-[#18181B] py-8 mt-12 text-center text-xs text-zinc-600 no-print">
+    <div class="max-w-7xl mx-auto px-4 space-y-1.5 font-medium">
+      <p class="font-heading font-bold text-[#18181B] text-sm">Saveetha Engineering College (Autonomous) • Learners UG Curriculum Dashboard</p>
+      <p>Official Curriculum Release: February 2025 • Fully Client-Side Neo-Brutalist Student Tracker</p>
+    </div>
+  </footer>
+
+  <!-- SCRIPT LOGIC -->
+  <script>
+    // Global Application State
+    let allSheets = window.CURRICULUM_DATA || [];
+    let currentSheet = null;
+    let activeSheetFilter = 'all';
+    let activeCategoryFilter = 'all';
+    let activeCourseStatusFilter = 'all';
+    let studentMode = 'regular'; // 'regular' or 'lateral'
+    let activeBatch = null;
+    let curriculumPage = 1;
+    let pageSize = 6;
+    let activeDeptGroup = 'all';
+    let cardLayout = 'list'; // 'list' or 'grid'
+    let chartsInstance = { bar: null, doughnut: null };
+    let areChartsVisible = false;
+
+    // Grade Points Map (Anna University / Autonomous SEC 10-point scale)
+    const GRADE_POINTS = {
+      'O': 10,
+      'A+': 9,
+      'A': 8,
+      'B+': 7,
+      'B': 6,
+      'C': 5,
+      'P': 5
+    };
+
+    // Category Neo-Brutalist Colors
+    const CATEGORY_MAP = {
+      'HS': { name: 'Humanities & Social Sciences', bg: 'bg-[#7C3AED] text-white' },
+      'BS': { name: 'Basic Sciences', bg: 'bg-[#2563EB] text-white' },
+      'ES': { name: 'Engineering Sciences', bg: 'bg-[#0284C7] text-white' },
+      'PC': { name: 'Professional Core', bg: 'bg-[#18181B] text-white' },
+      'PE': { name: 'Professional Electives', bg: 'bg-[#D97706] text-white' },
+      'OE': { name: 'Open Electives', bg: 'bg-[#10B981] text-white' },
+      'EEC': { name: 'Employability Enhancement', bg: 'bg-[#E11D48] text-white' },
+      'MC': { name: 'Mandatory Non-Credit', bg: 'bg-[#4B5563] text-white' },
+      'Minor': { name: 'Minor Specialization', bg: 'bg-[#9333EA] text-white' },
+      'Online': { name: 'Online Courses', bg: 'bg-[#0284C7] text-white' }
+    };
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!allSheets || allSheets.length === 0) {
+        fetch('curriculum_data.json')
+          .then(res => res.json())
+          .then(data => {
+            allSheets = data;
+            initApp();
+          })
+          .catch(err => console.error('Failed to load curriculum data:', err));
+      } else {
+        initApp();
+      }
+    });
+
+    function initApp() {
+      // Populate Quick Switcher Dropdown
+      const quickSelect = document.getElementById('sheetQuickSelect');
+      quickSelect.innerHTML = allSheets.map(s => `
+        <option value="${s.sheet_name}">${s.sheet_name} - ${s.metadata.degree || s.metadata.department || ''}</option>
+      `).join('');
+
+      renderSheetCards();
+      lucide.createIcons();
+    }
+
+    // Storage Key Helpers
+    function getStorageKey(sheetName) {
+      return `sec_progress_${sheetName}`;
+    }
+
+    function loadSheetProgress(sheetName) {
+      try {
+        const raw = localStorage.getItem(getStorageKey(sheetName));
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.courses) {
+            delete parsed.courses['NA'];
+            delete parsed.courses['-'];
+            delete parsed.courses[''];
+            delete parsed.courses['XXXXXX_19XXXXX'];
+          }
+          return parsed;
+        }
+      } catch (e) {
+        console.error('Error loading progress from localStorage:', e);
+      }
+      return { mode: 'regular', courses: {} };
+    }
+
+    function saveSheetProgress(sheetName, progressData) {
+      try {
+        localStorage.setItem(getStorageKey(sheetName), JSON.stringify(progressData));
+      } catch (e) {
+        console.error('Error saving progress to localStorage:', e);
+      }
+    }
+
+    // Helper: Compute Saved Progress for a given sheet
+    function getSheetSavedSummary(sheet) {
+      const progress = loadSheetProgress(sheet.sheet_name);
+      let earned = 0;
+      let completedCount = 0;
+      let inProgressCount = 0;
+
+      if (!sheet.courses) return { earned: 0, completedCount: 0, inProgressCount: 0, totalTarget: 164 };
+
+      sheet.courses.forEach(c => {
+        const key = getCourseKey(c);
+        const p = progress.courses[key];
+        if (p && p.status === 'completed') {
+          earned += (c.total_credits || 0);
+          completedCount++;
+        } else if (p && p.status === 'in_progress') {
+          inProgressCount++;
+        }
+      });
+
+      const mode = progress.mode || 'regular';
+      let totalTarget = 164;
+      const batchDict = sheet.batches || { 'Default': sheet.credit_requirements };
+      const batchKeys = Object.keys(batchDict);
+      const defaultBatchKey = sheet.active_batch || batchKeys[batchKeys.length - 1];
+      const reqList = (progress.batch && batchDict[progress.batch]) ? batchDict[progress.batch] : batchDict[defaultBatchKey];
+      if (reqList) {
+        const tot = reqList.find(r => r.category === 'TOTAL');
+        if (tot) {
+          totalTarget = mode === 'lateral' ? (tot.lateral_credits || 126) : (tot.regular_credits || 164);
+        }
+      }
+
+      return { earned, completedCount, inProgressCount, totalTarget, mode };
+    }
+
+    function getCourseKey(course) {
+      if (course.id) return course.id;
+      const valid24 = (course.code_2024 && course.code_2024 !== 'NA' && course.code_2024 !== '-') ? course.code_2024 : '';
+      const valid19 = (course.code_2019 && course.code_2019 !== 'NA' && course.code_2019 !== '-') ? course.code_2019 : '';
+      if (valid24 && valid19) return `${valid24}_${valid19}_${course.sno || ''}`;
+      if (valid24) return `${valid24}_${course.sno || ''}`;
+      if (valid19) return `${valid19}_${course.sno || ''}`;
+      return `${course.sno || ''}_${course.title}`;
+    }
+
+    // --- VIEW SWITCHING ---
+    function goToSheetPicker() {
+      document.getElementById('sheetPickerView').classList.remove('hidden');
+      document.getElementById('sheetDashboardView').classList.add('hidden');
+      document.getElementById('navSheetBtn').classList.add('hidden');
+      document.getElementById('navPrintBtn').classList.add('hidden');
+      currentSheet = null;
+      renderSheetCards();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function quickOpenSheet(sheetName) {
+      openSheetDashboard(sheetName);
+    }
+
+    function openSheetDashboard(sheetName) {
+      const sheet = allSheets.find(s => s.sheet_name === sheetName);
+      if (!sheet) return;
+
+      currentSheet = sheet;
+      const progress = loadSheetProgress(sheet.sheet_name);
+      studentMode = progress.mode || 'regular';
+
+      document.getElementById('sheetPickerView').classList.add('hidden');
+      document.getElementById('sheetDashboardView').classList.remove('hidden');
+      document.getElementById('navSheetBtn').classList.remove('hidden');
+      document.getElementById('navPrintBtn').classList.remove('hidden');
+
+      // Update Header Information
+      document.getElementById('dashDeptTitle').textContent = sheet.metadata.department || sheet.sheet_name;
+      document.getElementById('dashDegreeSub').textContent = `${sheet.metadata.degree || 'Curriculum'} • ${sheet.metadata.title || ''}`;
+      document.getElementById('dashRegBadge').textContent = sheet.metadata.regulation || 'AUTONOMOUS';
+      
+      const typeLabel = sheet.sheet_type === 'curriculum' ? 'Department Curriculum' : 
+                        sheet.sheet_type === 'minors' ? 'Minor Specialization' :
+                        sheet.sheet_type === 'open_electives' ? 'Open Electives' : 'Online Courses';
+      document.getElementById('dashSheetTypeBadge').textContent = typeLabel;
+
+      // Setup Batch Profiles (Defaults to latest active batch)
+      const batchDict = sheet.batches || { 'All Batches': sheet.credit_requirements };
+      const batchKeys = Object.keys(batchDict);
+      const defaultBatchKey = sheet.active_batch || batchKeys[batchKeys.length - 1];
+      activeBatch = (progress.batch && batchDict[progress.batch]) ? progress.batch : defaultBatchKey;
+      sheet.credit_requirements = batchDict[activeBatch];
+
+      const batchCont = document.getElementById('batchSelectContainer');
+      const batchSelect = document.getElementById('batchSelect');
+      if (batchKeys.length > 1) {
+        batchCont.classList.remove('hidden');
+        batchSelect.innerHTML = batchKeys.map(b => `<option value="${b}" ${b === activeBatch ? 'selected' : ''}>${b}</option>`).join('');
+      } else {
+        batchCont.classList.add('hidden');
+      }
+
+      document.getElementById('dashBatchBadge').textContent = activeBatch;
+
+      // Select in quick switcher
+      document.getElementById('sheetQuickSelect').value = sheet.sheet_name;
+
+      // Toggle Entry Mode Visibility
+      const entryModeCont = document.getElementById('entryModeContainer');
+      if (sheet.sheet_type === 'curriculum') {
+        entryModeCont.classList.remove('hidden');
+        updateStudentModeButtons();
+      } else {
+        entryModeCont.classList.add('hidden');
+      }
+
+      // Reset filters for new sheet
+      activeCategoryFilter = 'all';
+      activeCourseStatusFilter = 'all';
+      document.getElementById('courseSearchInput').value = '';
+      document.getElementById('courseTypeFilter').value = 'all';
+
+      updateDashboardStats();
+      renderCategoryCards();
+      renderCourseTable();
+      updateCharts();
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      lucide.createIcons();
+    }
+
+    function setStudentBatch(batchName) {
+      if (!currentSheet) return;
+      activeBatch = batchName;
+      if (currentSheet.batches && currentSheet.batches[batchName]) {
+        currentSheet.credit_requirements = currentSheet.batches[batchName];
+      }
+      const progress = loadSheetProgress(currentSheet.sheet_name);
+      progress.batch = batchName;
+      saveSheetProgress(currentSheet.sheet_name, progress);
+
+      document.getElementById('dashBatchBadge').textContent = batchName;
+
+      updateDashboardStats();
+      renderCategoryCards();
+      updateCharts();
+    }
+
+    function switchSheetDirectly(sheetName) {
+      openSheetDashboard(sheetName);
+    }
+
+    // --- CURRICULUM SELECTION & PAGINATION ---
+    function setSheetFilter(filter) {
+      activeSheetFilter = filter;
+      curriculumPage = 1;
+      document.getElementById('sheetRegDropdown').value = filter;
+      const radio = document.querySelector(`input[name="regRadio"][value="${filter}"]`);
+      if (radio) radio.checked = true;
+      renderSheetCards();
+    }
+
+    function matchesDeptGroup(sheet, group) {
+      if (group === 'all') return true;
+      const name = sheet.sheet_name.toUpperCase();
+      if (group === 'computing') {
+        return name.includes('CSE') || name.includes('IT') || name.includes('AI');
+      }
+      if (group === 'circuits') {
+        return name.includes('ECE') || name.includes('EEE') || name.includes('EIE') || name.includes('BME') || name.includes('MED');
+      }
+      if (group === 'core') {
+        return name.includes('MECH') || name.includes('CIVIL') || name.includes('CHEM') || name.includes('AGRI');
+      }
+      if (group === 'special') {
+        return ['MINORS', 'OPEN ELECTIVES', 'ONLINE COURSES'].includes(name);
+      }
+      return true;
+    }
+
+    function setDeptGroup(group) {
+      activeDeptGroup = group;
+      curriculumPage = 1;
+      document.querySelectorAll('.dept-tab-btn').forEach(btn => {
+        if (btn.getAttribute('data-dept') === group) {
+          btn.className = 'dept-tab-btn active px-3 py-1.5 rounded-lg text-xs font-heading font-bold bg-[#18181B] text-white border-2 border-[#18181B] shadow-brutal-sm cursor-pointer';
+        } else {
+          btn.className = 'dept-tab-btn px-3 py-1.5 rounded-lg text-xs font-heading font-bold bg-white text-[#18181B] border-2 border-[#18181B] hover:bg-zinc-100 cursor-pointer';
+        }
+      });
+      renderSheetCards();
+    }
+
+    function toggleCardLayout(layout) {
+      cardLayout = layout;
+      const btnList = document.getElementById('btnLayoutList');
+      const btnGrid = document.getElementById('btnLayoutGrid');
+      if (layout === 'grid') {
+        btnGrid.className = 'p-1.5 rounded-md border-2 border-[#18181B] bg-[#18181B] text-white cursor-pointer';
+        btnList.className = 'p-1.5 rounded-md border-2 border-[#18181B] bg-white text-[#18181B] cursor-pointer';
+      } else {
+        btnList.className = 'p-1.5 rounded-md border-2 border-[#18181B] bg-[#18181B] text-white cursor-pointer';
+        btnGrid.className = 'p-1.5 rounded-md border-2 border-[#18181B] bg-white text-[#18181B] cursor-pointer';
+      }
+      renderSheetCards();
+    }
+
+    function goToCurriculumPage(page) {
+      curriculumPage = page;
+      renderSheetCards();
+      const el = document.getElementById('deptGroupTabs');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function renderSheetCards() {
+      const query = (document.getElementById('sheetSearchInput').value || '').trim().toLowerCase();
+      const grid = document.getElementById('sheetGrid');
+
+      // 1. Check for Active Progress to render Pinned Quick Resume Banner
+      const resumeBanner = document.getElementById('quickResumeBanner');
+      const activeSheetWithProgress = allSheets.find(s => getSheetSavedSummary(s).completedCount > 0);
+      if (activeSheetWithProgress) {
+        const sum = getSheetSavedSummary(activeSheetWithProgress);
+        const percent = sum.totalTarget > 0 ? Math.min(100, Math.round((sum.earned / sum.totalTarget) * 100)) : 0;
+        resumeBanner.className = 'block bg-[#FFF1F2] border-2 border-[#18181B] rounded-xl p-4 shadow-brutal flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3';
+        resumeBanner.innerHTML = `
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-[#FF5A5F] border-2 border-[#18181B] text-white flex items-center justify-center shadow-brutal-sm">
+              <i data-lucide="bookmark" class="w-5 h-5 text-white"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-heading font-extrabold text-sm sm:text-base text-[#18181B]">Quick Resume: ${activeSheetWithProgress.sheet_name}</span>
+                <span class="text-3xs font-bold px-2 py-0.5 rounded-md bg-[#10B981] text-white border border-[#18181B]">${sum.earned} / ${sum.totalTarget} Credits (${percent}%)</span>
+              </div>
+              <p class="text-xs text-zinc-600 font-semibold">${activeSheetWithProgress.metadata.degree || activeSheetWithProgress.metadata.department || ''}</p>
+            </div>
+          </div>
+          <button onclick="openSheetDashboard('${activeSheetWithProgress.sheet_name}')" class="px-5 py-2.5 bg-[#FF5A5F] hover:bg-[#E04A4E] text-white font-heading font-extrabold text-xs rounded-lg border-2 border-[#18181B] shadow-brutal-sm hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all cursor-pointer flex items-center gap-1.5 self-end sm:self-auto">
+            <span>Continue Tracking</span>
+            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+          </button>
+        `;
+      } else {
+        resumeBanner.className = 'hidden';
+      }
+
+      // 2. Filter programs
+      const filtered = allSheets.filter(sheet => {
+        // Regulation filter
+        if (activeSheetFilter === 'R2024' && !sheet.sheet_name.includes('R2024')) return false;
+        if (activeSheetFilter === 'R2019' && !sheet.sheet_name.includes('R2019')) return false;
+        if (activeSheetFilter === '2023' && !sheet.sheet_name.includes('2023')) return false;
+        if (activeSheetFilter === 'special' && !['Minors', 'Open Electives', 'Online Courses'].includes(sheet.sheet_name)) return false;
+
+        // Department group filter
+        if (!matchesDeptGroup(sheet, activeDeptGroup)) return false;
+
+        // Search query
+        if (query) {
+          const name = sheet.sheet_name.toLowerCase();
+          const dept = (sheet.metadata.department || '').toLowerCase();
+          const deg = (sheet.metadata.degree || '').toLowerCase();
+          return name.includes(query) || dept.includes(query) || deg.includes(query);
+        }
+        return true;
+      });
+
+      document.getElementById('resultsCountPill').textContent = `${filtered.length} results`;
+
+      if (filtered.length === 0) {
+        grid.className = 'space-y-4';
+        grid.innerHTML = `
+          <div class="py-12 text-center text-zinc-600 bg-white rounded-xl border-2 border-[#18181B] shadow-brutal p-8">
+            <p class="font-heading font-bold text-base text-[#18181B]">No curriculums found matching your filter</p>
+            <p class="text-xs text-zinc-500 mt-1">Try selecting "All (33)" or adjusting your search keywords.</p>
+          </div>
+        `;
+        document.getElementById('paginationContainer').classList.add('hidden');
+        return;
+      }
+
+      // 3. Paginate
+      const totalItems = filtered.length;
+      const totalPages = Math.ceil(totalItems / pageSize);
+      if (curriculumPage > totalPages && totalPages > 0) curriculumPage = 1;
+      const startIndex = (curriculumPage - 1) * pageSize;
+      const endIndex = Math.min(startIndex + pageSize, totalItems);
+      const pageItems = filtered.slice(startIndex, endIndex);
+
+      document.getElementById('paginationInfo').textContent = `Showing ${totalItems > 0 ? startIndex + 1 : 0}-${endIndex} of ${totalItems} programs (Page ${curriculumPage} of ${totalPages})`;
+
+      // Render pagination buttons
+      const pagContainer = document.getElementById('paginationButtons');
+      if (totalPages > 1) {
+        let pagHtml = `
+          <button onclick="goToCurriculumPage(${curriculumPage - 1})" ${curriculumPage === 1 ? 'disabled class="opacity-40 cursor-not-allowed"' : 'class="hover:bg-zinc-100 cursor-pointer"'} class="px-2.5 py-1 text-xs font-heading font-bold rounded-md bg-white border-2 border-[#18181B] shadow-brutal-sm">
+            ← Prev
+          </button>
+        `;
+        for (let i = 1; i <= totalPages; i++) {
+          pagHtml += `
+            <button onclick="goToCurriculumPage(${i})" class="px-2.5 py-1 text-xs font-heading font-bold rounded-md border-2 border-[#18181B] cursor-pointer ${i === curriculumPage ? 'bg-[#FF5A5F] text-white shadow-none' : 'bg-white text-[#18181B] shadow-brutal-sm hover:bg-zinc-100'}">
+              ${i}
+            </button>
+          `;
+        }
+        pagHtml += `
+          <button onclick="goToCurriculumPage(${curriculumPage + 1})" ${curriculumPage === totalPages ? 'disabled class="opacity-40 cursor-not-allowed"' : 'class="hover:bg-zinc-100 cursor-pointer"'} class="px-2.5 py-1 text-xs font-heading font-bold rounded-md bg-white border-2 border-[#18181B] shadow-brutal-sm">
+            Next →
+          </button>
+        `;
+        pagContainer.innerHTML = pagHtml;
+        document.getElementById('paginationContainer').classList.remove('hidden');
+      } else {
+        pagContainer.innerHTML = '';
+        document.getElementById('paginationContainer').classList.add('hidden');
+      }
+
+      // 4. Set Layout Mode (Grid vs List)
+      if (cardLayout === 'grid') {
+        grid.className = 'grid grid-cols-1 md:grid-cols-2 gap-4';
+      } else {
+        grid.className = 'space-y-4';
+      }
+
+      // 5. Render Page Items
+      grid.innerHTML = pageItems.map(sheet => {
+        const summary = getSheetSavedSummary(sheet);
+        const courseCount = sheet.courses ? sheet.courses.length : 0;
+        const reg = sheet.sheet_name.startsWith('R2024') ? 'R2024' :
+                    sheet.sheet_name.startsWith('R2019') ? 'R2019' :
+                    sheet.sheet_name.startsWith('2023') ? '2023' : 'Special';
+
+        const tagColor = reg === 'R2024' ? 'bg-[#10B981] text-white' :
+                         reg === 'R2019' ? 'bg-[#1E3A8A] text-white' :
+                         reg === '2023' ? 'bg-[#D97706] text-white' : 'bg-[#7C3AED] text-white';
+
+        const percent = summary.totalTarget > 0 ? Math.min(100, Math.round((summary.earned / summary.totalTarget) * 100)) : 0;
+        const activeBatchLabel = sheet.active_batch || 'Latest Batch';
+
+        if (cardLayout === 'grid') {
+          // Compact 2-Column Grid Card
+          return `
+            <div class="bg-white rounded-xl p-4 sm:p-5 border-2 border-[#18181B] shadow-brutal hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-brutal-sm transition-all flex flex-col justify-between">
+              <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                  <span class="text-2xs font-heading font-bold px-2 py-0.5 rounded-md border-2 border-[#18181B] ${tagColor}">
+                    ${reg}
+                  </span>
+                  <span class="text-2xs font-heading font-bold px-2 py-0.5 rounded-md border-2 border-[#18181B] bg-white text-[#18181B]">
+                    ${summary.totalTarget} Credits
+                  </span>
+                </div>
+
+                <div>
+                  <h3 class="font-heading font-extrabold text-base text-[#18181B] leading-tight">
+                    ${sheet.sheet_name}
+                  </h3>
+                  <p class="text-xs font-semibold text-zinc-500 line-clamp-1 mt-0.5">
+                    ${sheet.metadata.degree || sheet.metadata.department || ''}
+                  </p>
+                </div>
+
+                <div class="text-2xs text-zinc-600 font-medium space-y-0.5">
+                  <p>• Cohort: <strong class="text-[#18181B]">${activeBatchLabel}</strong></p>
+                  <p>• Courses: <strong class="text-[#18181B]">${courseCount} courses</strong></p>
+                </div>
+
+                ${summary.completedCount > 0 ? `
+                  <div class="pt-1">
+                    <div class="flex justify-between text-3xs font-heading font-bold text-zinc-700 mb-0.5">
+                      <span class="text-[#10B981]">${summary.earned}/${summary.totalTarget} Credits</span>
+                      <span>${percent}%</span>
+                    </div>
+                    <div class="w-full bg-[#FAF7F0] border border-[#18181B] rounded-full h-1.5 overflow-hidden">
+                      <div class="bg-[#10B981] h-full rounded-full" style="width: ${percent}%"></div>
+                    </div>
+                  </div>
+                ` : ''}
+              </div>
+
+              <div class="pt-4 mt-3 border-t-2 border-zinc-100 flex items-center justify-between">
+                <span class="text-3xs font-bold text-zinc-400">SEC Autonomous</span>
+                <button 
+                  onclick="openSheetDashboard('${sheet.sheet_name}')" 
+                  class="px-3.5 py-1.5 bg-[#FF5A5F] hover:bg-[#E04A4E] text-white font-heading font-bold text-xs rounded-lg border-2 border-[#18181B] shadow-brutal-sm hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all cursor-pointer flex items-center gap-1"
+                >
+                  <span>Open</span>
+                  <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+          `;
+        }
+
+        // Detailed List Card (Matches reference image)
+        return `
+          <div class="bg-white rounded-xl p-5 sm:p-6 border-2 border-[#18181B] shadow-brutal hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-brutal-sm transition-all flex flex-col md:flex-row gap-5 items-start md:items-center justify-between">
+            <div class="space-y-2.5 flex-1">
+              <div class="flex flex-wrap items-center gap-2.5">
+                <div>
+                  <h3 class="font-heading font-extrabold text-base sm:text-lg text-[#18181B] leading-tight">
+                    ${sheet.sheet_name} - ${sheet.metadata.degree || sheet.metadata.department || ''}
+                  </h3>
+                  <p class="text-xs font-semibold text-zinc-500">${sheet.metadata.department || 'Saveetha Engineering College'}</p>
+                </div>
+                <div class="flex items-center gap-1.5 ml-auto md:ml-0">
+                  <span class="text-2xs font-heading font-bold px-2 py-0.5 rounded-md border-2 border-[#18181B] ${tagColor}">
+                    ${reg}
+                  </span>
+                  <span class="text-2xs font-heading font-bold px-2 py-0.5 rounded-md border-2 border-[#18181B] bg-white text-[#18181B]">
+                    ${summary.totalTarget} Credits
+                  </span>
+                </div>
+              </div>
+
+              <div class="text-xs text-zinc-700 font-medium pl-2 space-y-0.5 border-l-2 border-zinc-200">
+                <p>• Regulation Cohort: <strong class="text-[#18181B]">${activeBatchLabel}</strong></p>
+                <p>• Degree Requirements: <strong class="text-[#18181B]">${summary.totalTarget} Credits</strong> (Regular) | <strong class="text-[#18181B]">${courseCount} courses offered</strong></p>
+              </div>
+
+              ${summary.completedCount > 0 ? `
+                <div class="pt-1.5 max-w-md">
+                  <div class="flex justify-between text-2xs font-heading font-bold text-zinc-700 mb-1">
+                    <span class="text-[#10B981] flex items-center gap-1">
+                      <i data-lucide="check" class="w-3 h-3 text-[#10B981]"></i>
+                      <span>${summary.earned} / ${summary.totalTarget} Credits Earned</span>
+                    </span>
+                    <span>${percent}%</span>
+                  </div>
+                  <div class="w-full bg-[#FAF7F0] border border-[#18181B] rounded-full h-2 overflow-hidden">
+                    <div class="bg-[#10B981] h-full rounded-full" style="width: ${percent}%"></div>
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+
+            <div class="w-full md:w-auto flex md:flex-col items-end justify-between md:justify-center gap-3">
+              <span class="text-2xs font-bold text-zinc-500 flex items-center gap-1">
+                <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
+                <span>SEC Autonomous</span>
+              </span>
+              <button 
+                onclick="openSheetDashboard('${sheet.sheet_name}')" 
+                class="px-5 py-2.5 bg-[#FF5A5F] hover:bg-[#E04A4E] text-white font-heading font-extrabold text-xs sm:text-sm rounded-lg border-2 border-[#18181B] shadow-brutal hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-brutal-sm active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <span>Open Dashboard</span>
+                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    // --- STUDENT MODE (REGULAR vs LATERAL) ---
+    function setStudentMode(mode) {
+      studentMode = mode;
+      const progress = loadSheetProgress(currentSheet.sheet_name);
+      progress.mode = mode;
+      saveSheetProgress(currentSheet.sheet_name, progress);
+
+      updateStudentModeButtons();
+      updateDashboardStats();
+      renderCategoryCards();
+      renderCourseTable();
+      updateCharts();
+    }
+
+    function updateStudentModeButtons() {
+      const btnReg = document.getElementById('btnRegularMode');
+      const btnLat = document.getElementById('btnLateralMode');
+      if (studentMode === 'lateral') {
+        btnLat.className = 'px-3 py-1.5 rounded-md transition-all border-2 border-[#18181B] bg-white text-[#18181B] shadow-brutal-sm';
+        btnReg.className = 'px-3 py-1.5 rounded-md transition-all text-zinc-700 hover:text-[#18181B] border-2 border-transparent';
+      } else {
+        btnReg.className = 'px-3 py-1.5 rounded-md transition-all border-2 border-[#18181B] bg-white text-[#18181B] shadow-brutal-sm';
+        btnLat.className = 'px-3 py-1.5 rounded-md transition-all text-zinc-700 hover:text-[#18181B] border-2 border-transparent';
+      }
+    }
+
+    // --- DASHBOARD STATS COMPUTATION ---
+    function updateDashboardStats() {
+      if (!currentSheet) return;
+
+      const progress = loadSheetProgress(currentSheet.sheet_name);
+      let earnedCredits = 0;
+      let completedCount = 0;
+      let inProgressCount = 0;
+      let gradedCredits = 0;
+      let weightedGradePoints = 0;
+
+      currentSheet.courses.forEach(c => {
+        const key = getCourseKey(c);
+        const p = progress.courses[key];
+        const credits = c.total_credits || 0;
+
+        if (p && p.status === 'completed') {
+          earnedCredits += credits;
+          completedCount++;
+          if (p.grade && GRADE_POINTS[p.grade] !== undefined) {
+            gradedCredits += credits;
+            weightedGradePoints += (credits * GRADE_POINTS[p.grade]);
+          }
+        } else if (p && p.status === 'in_progress') {
+          inProgressCount++;
+        }
+      });
+
+      // Target credits based on active batch and mode
+      let targetCredits = 164;
+      if (currentSheet.credit_requirements) {
+        const tot = currentSheet.credit_requirements.find(r => r.category === 'TOTAL');
+        if (tot) {
+          targetCredits = studentMode === 'lateral' ? (tot.lateral_credits || 126) : (tot.regular_credits || 164);
+        }
+      }
+
+      const totalCourses = currentSheet.courses.length;
+      const pendingCount = totalCourses - completedCount - inProgressCount;
+      const creditPercent = targetCredits > 0 ? Math.min(100, Math.round((earnedCredits / targetCredits) * 100)) : 0;
+      const remainingCredits = Math.max(0, targetCredits - earnedCredits);
+
+      // Estimated CGPA
+      let estimatedCGPA = '-';
+      if (gradedCredits > 0) {
+        estimatedCGPA = (weightedGradePoints / gradedCredits).toFixed(2);
+      }
+
+      // Update DOM
+      document.getElementById('metricCreditsEarned').textContent = earnedCredits;
+      document.getElementById('metricCreditsTarget').textContent = `/ ${targetCredits} Target`;
+      document.getElementById('metricCreditProgressBar').style.width = `${creditPercent}%`;
+      document.getElementById('metricCreditPercent').textContent = `${creditPercent}% Completed`;
+      document.getElementById('metricCreditsRemaining').textContent = `${remainingCredits} credits needed`;
+
+      document.getElementById('metricCoursesCompleted').textContent = completedCount;
+      document.getElementById('metricCoursesTotal').textContent = `/ ${totalCourses} Total`;
+      document.getElementById('metricCoursesInProgress').textContent = `${inProgressCount} In Progress`;
+      document.getElementById('metricCoursesPending').textContent = `${pendingCount} Pending`;
+
+      document.getElementById('metricEstimatedCGPA').textContent = estimatedCGPA;
+      document.getElementById('metricGradedCreditsNotice').textContent = gradedCredits > 0 ? 
+        `Calculated from ${gradedCredits} graded credits` : 'Mark grades on completed courses to calculate';
+
+      // Degree Status Badge
+      const statusBadge = document.getElementById('metricDegreeStatusBadge');
+      const statusDesc = document.getElementById('metricDegreeStatusDesc');
+
+      if (earnedCredits >= targetCredits && targetCredits > 0) {
+        statusBadge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-heading font-bold bg-[#10B981] text-white border-2 border-[#18181B]';
+        statusBadge.innerHTML = `<i data-lucide="check-check" class="w-3.5 h-3.5"></i><span>Degree Target Met</span>`;
+        statusDesc.textContent = 'Congratulations! You satisfied graduation requirements.';
+      } else if (creditPercent >= 75) {
+        statusBadge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-heading font-bold bg-[#7C3AED] text-white border-2 border-[#18181B]';
+        statusBadge.innerHTML = `<i data-lucide="sparkles" class="w-3.5 h-3.5"></i><span>Final Year Ready</span>`;
+        statusDesc.textContent = `${remainingCredits} credits remaining to complete degree`;
+      } else if (creditPercent >= 50) {
+        statusBadge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-heading font-bold bg-[#2563EB] text-white border-2 border-[#18181B]';
+        statusBadge.innerHTML = `<i data-lucide="trending-up" class="w-3.5 h-3.5"></i><span>Halfway Milestone!</span>`;
+        statusDesc.textContent = 'Good momentum! Keep tracking your core and electives.';
+      } else if (completedCount > 0) {
+        statusBadge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-heading font-bold bg-[#D97706] text-white border-2 border-[#18181B]';
+        statusBadge.innerHTML = `<i data-lucide="clock" class="w-3.5 h-3.5"></i><span>In Progress</span>`;
+        statusDesc.textContent = 'Course tracking active.';
+      } else {
+        statusBadge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-heading font-bold bg-[#FAF7F0] border-2 border-[#18181B] text-[#18181B]';
+        statusBadge.innerHTML = `<span>Not Started</span>`;
+        statusDesc.textContent = 'Mark completed courses below';
+      }
+
+      renderSemesterCards();
+      lucide.createIcons();
+    }
+
+    // --- CATEGORY CARDS AUDIT (NEO-BRUTALIST STYLE) ---
+    function renderCategoryCards() {
+      if (!currentSheet) return;
+
+      const grid = document.getElementById('categoryCardsGrid');
+      const progress = loadSheetProgress(currentSheet.sheet_name);
+
+      // Compute earned credits per category
+      const earnedByCat = {};
+      currentSheet.courses.forEach(c => {
+        const key = getCourseKey(c);
+        const p = progress.courses[key];
+        if (p && p.status === 'completed') {
+          const cat = (c.category || 'PC').split(' ')[0];
+          earnedByCat[cat] = (earnedByCat[cat] || 0) + (c.total_credits || 0);
+        }
+      });
+
+      const categoriesToShow = currentSheet.credit_requirements ? 
+        currentSheet.credit_requirements.filter(r => r.category !== 'TOTAL' && (studentMode === 'lateral' ? (r.lateral_credits > 0 || r.regular_credits > 0) : (r.regular_credits > 0 || r.offered_credits > 0))) : [];
+
+      grid.innerHTML = categoriesToShow.map(req => {
+        const catCode = req.category;
+        const required = studentMode === 'lateral' ? (req.lateral_credits || req.regular_credits || 0) : (req.regular_credits || 0);
+        const earned = earnedByCat[catCode] || 0;
+        const isMet = required > 0 && earned >= required;
+        const catMeta = CATEGORY_MAP[catCode] || { name: catCode, bg: 'bg-[#18181B] text-white' };
+        const percent = required > 0 ? Math.min(100, Math.round((earned / required) * 100)) : (earned > 0 ? 100 : 0);
+        const isFilterActive = activeCategoryFilter === catCode;
+
+        return `
+          <div 
+            onclick="toggleCategoryFilter('${catCode}')" 
+            class="bg-white rounded-xl p-3 border-2 border-[#18181B] transition-all cursor-pointer hover:translate-x-[1px] hover:translate-y-[1px] flex flex-col justify-between ${
+              isFilterActive ? 'bg-[#FFF1F2] ring-2 ring-[#FF5A5F] shadow-none' : 'shadow-brutal hover:shadow-brutal-sm'
+            }"
+          >
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="text-2xs px-2 py-0.5 rounded-md font-heading font-extrabold border-2 border-[#18181B] ${catMeta.bg}">
+                  ${catCode}
+                </span>
+                ${isMet ? `<i data-lucide="check-circle-2" class="w-4 h-4 text-[#10B981]"></i>` : ''}
+              </div>
+              <p class="text-3xs text-zinc-600 font-bold line-clamp-1" title="${catMeta.name}">
+                ${catMeta.name}
+              </p>
+            </div>
+
+            <div class="mt-2.5">
+              <div class="flex items-baseline justify-between text-2xs font-heading font-extrabold">
+                <span class="${isMet ? 'text-[#10B981]' : 'text-[#18181B]'}">${earned}</span>
+                <span class="text-zinc-400">/ ${required}</span>
+              </div>
+              <div class="w-full bg-[#FAF7F0] border border-[#18181B] rounded-full h-2 overflow-hidden mt-1 p-0.5">
+                <div class="${isMet ? 'bg-[#10B981]' : 'bg-[#FF5A5F]'} h-full rounded-full transition-all" style="width: ${percent}%"></div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Show/hide Clear Category Filter button
+      const clearBtn = document.getElementById('btnClearCategoryFilter');
+      if (activeCategoryFilter !== 'all') {
+        clearBtn.classList.remove('hidden');
+        clearBtn.textContent = `Filtered: ${activeCategoryFilter} (Click to Clear)`;
+      } else {
+        clearBtn.classList.add('hidden');
+      }
+
+      lucide.createIcons();
+    }
+
+    function toggleCategoryFilter(catCode) {
+      if (activeCategoryFilter === catCode) {
+        activeCategoryFilter = 'all';
+      } else {
+        activeCategoryFilter = catCode;
+      }
+      renderCategoryCards();
+      renderCourseTable();
+    }
+
+    function clearCategoryFilter() {
+      activeCategoryFilter = 'all';
+      renderCategoryCards();
+      renderCourseTable();
+    }
+
+    // --- COURSE TABLE RENDERING ---
+    function setCourseStatusFilter(status) {
+      activeCourseStatusFilter = status;
+      document.querySelectorAll('.course-status-btn').forEach(btn => {
+        if (btn.getAttribute('data-status') === status) {
+          btn.className = 'course-status-btn active px-3 py-1 rounded-md text-xs font-heading font-bold bg-[#18181B] text-white border-2 border-[#18181B]';
+        } else {
+          btn.className = 'course-status-btn px-3 py-1 rounded-md text-xs font-heading font-bold bg-white text-[#18181B] border-2 border-[#18181B] hover:bg-zinc-100';
+        }
+      });
+      renderCourseTable();
+    }
+
+    function renderCourseTable() {
+      if (!currentSheet) return;
+
+      const progress = loadSheetProgress(currentSheet.sheet_name);
+      const query = (document.getElementById('courseSearchInput').value || '').trim().toLowerCase();
+      const typeFilter = document.getElementById('courseTypeFilter').value;
+      const tbody = document.getElementById('courseTableBody');
+      const emptyNotice = document.getElementById('courseTableEmpty');
+
+      const filteredCourses = currentSheet.courses.filter(c => {
+        const key = getCourseKey(c);
+        const p = progress.courses[key] || { status: 'none', grade: '' };
+
+        // Category filter
+        if (activeCategoryFilter !== 'all') {
+          const mainCat = (c.category || 'PC').split(' ')[0];
+          if (mainCat !== activeCategoryFilter && c.category !== activeCategoryFilter) return false;
+        }
+
+        // Status filter
+        if (activeCourseStatusFilter === 'completed' && p.status !== 'completed') return false;
+        if (activeCourseStatusFilter === 'in_progress' && p.status !== 'in_progress') return false;
+        if (activeCourseStatusFilter === 'pending' && p.status && p.status !== 'none') return false;
+
+        // Course Type Filter
+        if (typeFilter !== 'all') {
+          const ct = (c.course_type || '').toLowerCase();
+          if (typeFilter === 'theory' && !ct.includes('theory')) return false;
+          if (typeFilter === 'tip' && !ct.includes('tip') && !ct.includes('int')) return false;
+          if (typeFilter === 'practical' && !ct.includes('practical') && !ct.includes('lab')) return false;
+        }
+
+        // Search Query
+        if (query) {
+          const title = (c.title || '').toLowerCase();
+          const c24 = (c.code_2024 || '').toLowerCase();
+          const c19 = (c.code_2019 || '').toLowerCase();
+          const prereq = (c.prerequisite || '').toLowerCase();
+          const remarks = (c.remarks || '').toLowerCase();
+          return title.includes(query) || c24.includes(query) || c19.includes(query) || prereq.includes(query) || remarks.includes(query);
+        }
+
+        return true;
+      });
+
+      if (filteredCourses.length === 0) {
+        tbody.innerHTML = '';
+        emptyNotice.classList.remove('hidden');
+        return;
+      }
+
+      emptyNotice.classList.add('hidden');
+
+      tbody.innerHTML = filteredCourses.map(c => {
+        const key = getCourseKey(c);
+        const p = progress.courses[key] || { status: 'none', grade: '' };
+        const status = p.status || 'none';
+        const grade = p.grade || '';
+
+        const mainCat = (c.category || 'PC').split(' ')[0];
+        const catMeta = CATEGORY_MAP[mainCat] || { name: mainCat, bg: 'bg-[#18181B] text-white' };
+
+        const thCred = c.theory_credits || 0;
+        const prCred = c.practical_credits || 0;
+        const totCred = c.total_credits || 0;
+
+        // Status button styling in Neo-Brutalist design
+        let statusBtn = '';
+        if (status === 'completed') {
+          statusBtn = `
+            <button onclick="cycleCourseStatus('${escapeCourseKey(key)}')" title="Click to cycle status" class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-[#10B981] text-white border-2 border-[#18181B] shadow-brutal-sm hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all cursor-pointer">
+              <i data-lucide="check" class="w-4 h-4"></i>
+            </button>
+          `;
+        } else if (status === 'in_progress') {
+          statusBtn = `
+            <button onclick="cycleCourseStatus('${escapeCourseKey(key)}')" title="Click to cycle status" class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-[#D97706] text-white border-2 border-[#18181B] shadow-brutal-sm hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all cursor-pointer">
+              <i data-lucide="clock" class="w-4 h-4"></i>
+            </button>
+          `;
+        } else {
+          statusBtn = `
+            <button onclick="cycleCourseStatus('${escapeCourseKey(key)}')" title="Click to cycle status" class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-white text-zinc-400 border-2 border-[#18181B] shadow-brutal-sm hover:text-[#18181B] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all cursor-pointer">
+              <i data-lucide="circle" class="w-4 h-4"></i>
+            </button>
+          `;
+        }
+
+        // Grade dropdown
+        const gradeSelect = `
+          <select 
+            onchange="updateCourseGrade('${escapeCourseKey(key)}', this.value)" 
+            class="text-xs font-heading font-bold rounded-md border-2 border-[#18181B] py-1 px-1.5 transition-all ${
+              status === 'completed' ? 'bg-white text-[#18181B] shadow-brutal-sm cursor-pointer' : 'bg-zinc-100 text-zinc-400 pointer-events-none'
+            }"
+            ${status !== 'completed' ? 'disabled' : ''}
+          >
+            <option value="" ${!grade ? 'selected' : ''}>- Grade -</option>
+            <option value="O" ${grade === 'O' ? 'selected' : ''}>O (10)</option>
+            <option value="A+" ${grade === 'A+' ? 'selected' : ''}>A+ (9)</option>
+            <option value="A" ${grade === 'A' ? 'selected' : ''}>A (8)</option>
+            <option value="B+" ${grade === 'B+' ? 'selected' : ''}>B+ (7)</option>
+            <option value="B" ${grade === 'B' ? 'selected' : ''}>B (6)</option>
+            <option value="C" ${grade === 'C' ? 'selected' : ''}>C (5)</option>
+            <option value="P" ${grade === 'P' ? 'selected' : ''}>Pass</option>
+          </select>
+        `;
+
+        return `
+          <tr class="hover:bg-[#FAF7F0] transition-colors ${status === 'completed' ? 'bg-[#ECFDF5]/50' : ''}">
+            <td class="py-2.5 px-3 text-center">
+              <div class="flex items-center justify-center gap-1">
+                ${statusBtn}
+                ${(status === 'completed' && p.semester) ? `<span class="inline-block px-1.5 py-0.5 rounded-md bg-[#FAF7F0] border border-[#18181B] text-3xs font-heading font-extrabold text-[#18181B]">Sem ${p.semester}</span>` : ''}
+              </div>
+            </td>
+            <td class="py-2.5 px-2">${gradeSelect}</td>
+            <td class="py-2.5 px-2 text-center text-zinc-500 font-mono text-2xs font-bold">${c.sno || '-'}</td>
+            <td class="py-2.5 px-2">
+              <span class="text-2xs px-2 py-0.5 rounded-md font-heading font-extrabold border-2 border-[#18181B] ${catMeta.bg}" title="${catMeta.name}">
+                ${c.category || 'PC'}
+              </span>
+            </td>
+            <td class="py-2.5 px-3 font-mono text-2xs">
+              <div class="space-y-1">
+                ${c.code_2024 && c.code_2024 !== 'NA' ? `<span class="inline-block px-1.5 py-0.5 rounded bg-white border border-[#18181B] text-[#18181B] font-bold" title="R2024 Code">${c.code_2024}</span>` : ''}
+                ${c.code_2019 && c.code_2019 !== 'NA' ? `<span class="inline-block px-1.5 py-0.5 rounded bg-[#FAF7F0] border border-[#18181B] text-[#18181B] font-bold" title="R2019 Code">${c.code_2019}</span>` : ''}
+                ${!c.code_2024 && !c.code_2019 ? `<span class="text-zinc-400">-</span>` : ''}
+              </div>
+            </td>
+            <td class="py-2.5 px-4 font-heading font-bold text-[#18181B] leading-snug">
+              ${c.title}
+            </td>
+            <td class="py-2.5 px-3 text-zinc-600 text-2xs">
+              ${c.prerequisite && c.prerequisite !== '-' && c.prerequisite !== 'NA' ? `
+                <span class="inline-block px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-[#18181B] font-bold">
+                  ${c.prerequisite}
+                </span>
+              ` : '<span class="text-zinc-400">-</span>'}
+            </td>
+            <td class="py-2.5 px-2 text-center font-mono">
+              <span class="font-black text-[#18181B] text-xs">${totCred}</span>
+              ${(thCred > 0 || prCred > 0) ? `<span class="text-3xs text-zinc-500 block">(${thCred}-${prCred})</span>` : ''}
+            </td>
+            <td class="py-2.5 px-3 text-2xs font-semibold text-zinc-700">
+              ${c.course_type || 'Theory'}
+            </td>
+            <td class="py-2.5 px-3 text-3xs text-zinc-600 italic max-w-xs">
+              ${c.remarks || '-'}
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      document.getElementById('courseTableSubtitle').textContent = 
+        `Showing ${filteredCourses.length} of ${currentSheet.courses.length} courses`;
+
+      lucide.createIcons();
+    }
+
+    function escapeCourseKey(key) {
+      return encodeURIComponent(key);
+    }
+
+    function cycleCourseStatus(encodedKey) {
+      const key = decodeURIComponent(encodedKey);
+      const progress = loadSheetProgress(currentSheet.sheet_name);
+      const current = progress.courses[key] || { status: 'none', grade: '' };
+
+      let nextStatus = 'in_progress';
+      if (current.status === 'none') {
+        nextStatus = 'in_progress';
+      } else if (current.status === 'in_progress') {
+        nextStatus = 'completed';
+        if (!current.grade) current.grade = 'A';
+      } else {
+        nextStatus = 'none';
+        current.grade = '';
+      }
+
+      progress.courses[key] = {
+        status: nextStatus,
+        grade: current.grade
+      };
+
+      saveSheetProgress(currentSheet.sheet_name, progress);
+
+      if (nextStatus === 'completed') {
+        checkAndTriggerConfetti();
+      }
+
+      updateDashboardStats();
+      renderCategoryCards();
+      renderCourseTable();
+      updateCharts();
+    }
+
+    function updateCourseGrade(encodedKey, grade) {
+      const key = decodeURIComponent(encodedKey);
+      const progress = loadSheetProgress(currentSheet.sheet_name);
+      if (!progress.courses[key]) {
+        progress.courses[key] = { status: 'completed', grade: grade };
+      } else {
+        progress.courses[key].grade = grade;
+      }
+
+      saveSheetProgress(currentSheet.sheet_name, progress);
+      updateDashboardStats();
+      renderCourseTable();
+    }
+
+    function checkAndTriggerConfetti() {
+      const progress = loadSheetProgress(currentSheet.sheet_name);
+      let earned = 0;
+      currentSheet.courses.forEach(c => {
+        const p = progress.courses[getCourseKey(c)];
+        if (p && p.status === 'completed') earned += (c.total_credits || 0);
+      });
+
+      let target = 164;
+      if (currentSheet.credit_requirements) {
+        const tot = currentSheet.credit_requirements.find(r => r.category === 'TOTAL');
+        if (tot) target = studentMode === 'lateral' ? (tot.lateral_credits || 126) : (tot.regular_credits || 164);
+      }
+
+      if (earned >= target && target > 0) {
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      }
+    }
+
+    // --- SEMESTER-WISE MARKSHEET UPLOAD & INFERENCE ---
+    let currentInferredData = null;
+    let currentInferredTargetSheet = null;
+    let modalTargetSemester = 6;
+
+    function renderSemesterCards() {
+      if (!currentSheet) return;
+      const grid = document.getElementById('semesterCardsGrid');
+      if (!grid) return;
+      const progress = loadSheetProgress(currentSheet.sheet_name);
+      const sems = progress.semesters || {};
+
+      let uploadedCount = 0;
+      let html = '';
+
+      for (let s = 1; s <= 8; s++) {
+        const semData = sems[s];
+        const isUploaded = semData && semData.uploaded;
+        if (isUploaded) uploadedCount++;
+
+        html += `
+          <div class="bg-white rounded-xl p-3 border-2 border-[#18181B] shadow-brutal flex flex-col justify-between hover:translate-x-[1px] hover:translate-y-[1px] transition-all">
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-heading font-extrabold text-[#18181B]">Sem ${s}</span>
+                ${isUploaded ? `
+                  <span class="text-3xs font-bold px-1.5 py-0.5 rounded-md bg-[#10B981] text-white border border-[#18181B]">✓ Added</span>
+                ` : `
+                  <span class="text-3xs font-bold px-1.5 py-0.5 rounded-md bg-zinc-100 text-zinc-500 border border-zinc-300">Pending</span>
+                `}
+              </div>
+
+              ${isUploaded ? `
+                <div class="space-y-0.5 my-1.5">
+                  <span class="font-heading font-black text-xs text-[#18181B] block">${semData.credits || 0} Credits</span>
+                  <span class="text-3xs font-heading font-bold text-[#FF5A5F] block">SGPA: ${semData.sgpa || '-'}</span>
+                  <span class="text-3xs text-zinc-500 font-semibold block">${semData.courses ? semData.courses.length : 0} Courses</span>
+                </div>
+              ` : `
+                <div class="py-2.5 text-center">
+                  <span class="text-3xs font-bold text-zinc-400 block">Not uploaded</span>
+                </div>
+              `}
+            </div>
+
+            <div class="pt-2 border-t border-zinc-100 flex items-center justify-between gap-1">
+              ${isUploaded ? `
+                <button onclick="openMarksheetModalForSem(${s})" class="text-3xs font-heading font-bold px-2 py-1 rounded-md bg-[#FAF7F0] hover:bg-zinc-100 border border-[#18181B] text-[#18181B] flex-1 text-center cursor-pointer">
+                  Manage
+                </button>
+                <button onclick="clearSemesterMarksheet(${s})" title="Clear this semester" class="text-3xs font-bold px-1.5 py-1 rounded-md bg-white hover:bg-rose-50 border border-zinc-300 text-zinc-500 hover:text-rose-600 cursor-pointer">
+                  ✕
+                </button>
+              ` : `
+                <button onclick="openMarksheetModalForSem(${s})" class="text-3xs font-heading font-bold px-2 py-1 rounded-md bg-[#FF5A5F] hover:bg-[#E04A4E] text-white border border-[#18181B] shadow-2xs w-full text-center cursor-pointer">
+                  + Upload
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+      }
+
+      grid.innerHTML = html;
+      const badge = document.getElementById('semestersCountBadge');
+      if (badge) badge.textContent = `${uploadedCount} of 8 Uploaded`;
+      lucide.createIcons();
+    }
+
+    function openMarksheetModalForSem(semNum) {
+      modalTargetSemester = semNum || modalTargetSemester || 6;
+      renderModalSemesterPills();
+      openMarksheetModal();
+    }
+
+    function renderModalSemesterPills() {
+      const container = document.getElementById('modalSemSelectorPills');
+      if (!container) return;
+      let html = '';
+      for (let s = 1; s <= 8; s++) {
+        const isActive = (s === modalTargetSemester);
+        html += `
+          <button type="button" onclick="setModalSemester(${s})" class="py-1.5 px-1 rounded-md text-xs font-heading font-bold border-2 border-[#18181B] transition-all cursor-pointer text-center ${
+            isActive ? 'bg-[#FF5A5F] text-white shadow-none' : 'bg-white text-[#18181B] shadow-brutal-sm hover:bg-zinc-100'
+          }">
+            Sem ${s}
+          </button>
+        `;
+      }
+      container.innerHTML = html;
+      const badge = document.getElementById('detectedSemBadge');
+      if (badge) badge.textContent = `Semester ${modalTargetSemester} Selected`;
+    }
+
+    function setModalSemester(s) {
+      modalTargetSemester = s;
+      renderModalSemesterPills();
+      const badge = document.getElementById('inferSemesterBadge');
+      if (badge) badge.textContent = `Semester ${modalTargetSemester}`;
+    }
+
+    function clearSemesterMarksheet(semNum) {
+      if (!currentSheet) return;
+      if (!confirm(`Are you sure you want to clear tracked results for Semester ${semNum}?`)) return;
+      const progress = loadSheetProgress(currentSheet.sheet_name);
+      if (progress.semesters && progress.semesters[semNum]) {
+        delete progress.semesters[semNum];
+      }
+      if (progress.courses) {
+        Object.keys(progress.courses).forEach(k => {
+          if (progress.courses[k] && progress.courses[k].semester === semNum) {
+            delete progress.courses[k];
+          }
+        });
+      }
+      saveSheetProgress(currentSheet.sheet_name, progress);
+      updateDashboardStats();
+      renderSemesterCards();
+      renderCategoryCards();
+      renderCourseTable();
+      updateCharts();
+    }
+
+    function openMarksheetModal() {
+      resetMarksheetModalState();
+      document.getElementById('marksheetFileInput').value = '';
+      renderModalSemesterPills();
+      document.getElementById('marksheetModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeMarksheetModal() {
+      document.getElementById('marksheetModal').classList.add('hidden');
+    }
+
+    function resetMarksheetModalState() {
+      document.getElementById('marksheetErrorBox').classList.add('hidden');
+      document.getElementById('marksheetDropzone').classList.remove('hidden');
+      document.getElementById('marksheetLoading').classList.add('hidden');
+      document.getElementById('marksheetInferenceResults').classList.add('hidden');
+    }
+
+    function showMarksheetError(msg) {
+      document.getElementById('marksheetLoading').classList.add('hidden');
+      document.getElementById('marksheetDropzone').classList.add('hidden');
+      document.getElementById('marksheetInferenceResults').classList.add('hidden');
+      document.getElementById('marksheetErrorText').textContent = msg;
+      document.getElementById('marksheetErrorBox').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function triggerFileInput() {
+      document.getElementById('marksheetFileInput').click();
+    }
+
+    function handleDropzoneDragOver(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      document.getElementById('marksheetDropzone').classList.add('bg-[#FFF1F2]', 'border-[#FF5A5F]');
+    }
+
+    function handleDropzoneDragLeave(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      document.getElementById('marksheetDropzone').classList.remove('bg-[#FFF1F2]', 'border-[#FF5A5F]');
+    }
+
+    function handleDropzoneDrop(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      document.getElementById('marksheetDropzone').classList.remove('bg-[#FFF1F2]', 'border-[#FF5A5F]');
+      const files = e.dataTransfer && e.dataTransfer.files;
+      if (files && files.length > 0) {
+        const file = files[0];
+        if (!file.name.toLowerCase().endsWith('.pdf')) {
+          showMarksheetError('Please select or drop a valid PDF marksheet file.');
+          return;
+        }
+        uploadAndParseMarksheet(file);
+      }
+    }
+
+    function handleMarksheetFileSelect(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      if (!file.name.toLowerCase().endsWith('.pdf')) {
+        showMarksheetError('Please select a valid PDF marksheet file.');
+        return;
+      }
+      uploadAndParseMarksheet(file);
+    }
+
+    function loadSampleMarksheet() {
+      document.getElementById('marksheetErrorBox').classList.add('hidden');
+      document.getElementById('marksheetDropzone').classList.add('hidden');
+      document.getElementById('marksheetLoading').classList.remove('hidden');
+      document.getElementById('marksheetInferenceResults').classList.add('hidden');
+
+      fetch('/api/sample-marksheet')
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to load sample marksheet from server');
+          return res.json();
+        })
+        .then(data => {
+          modalTargetSemester = 6;
+          displayMarksheetInference(data);
+        })
+        .catch(err => {
+          showMarksheetError('Error loading sample marksheet: ' + err.message);
+        });
+    }
+
+    async function uploadAndParseMarksheet(file) {
+      document.getElementById('marksheetErrorBox').classList.add('hidden');
+      document.getElementById('marksheetDropzone').classList.add('hidden');
+      document.getElementById('marksheetLoading').classList.remove('hidden');
+      document.getElementById('marksheetInferenceResults').classList.add('hidden');
+
+      // Auto-detect semester from file name (e.g. "6th sem res.pdf" -> 6)
+      const fname = (file.name || '').toLowerCase();
+      for (let s = 1; s <= 8; s++) {
+        if (fname.includes(`${s}th`) || fname.includes(`sem ${s}`) || fname.includes(`sem-${s}`) || fname.includes(`sem${s}`)) {
+          modalTargetSemester = s;
+          break;
+        }
+      }
+      renderModalSemesterPills();
+
+      let data = null;
+      let lastError = null;
+
+      // Strategy 1: Server-side parser using FormData & Python pdfplumber
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch('/api/parse-marksheet', {
+          method: 'POST',
+          body: formData
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json && json.courses && json.courses.length > 0) {
+            data = json;
+          }
+        } else {
+          const errRes = await res.json().catch(() => ({}));
+          lastError = errRes.error || errRes.details || `Server responded with ${res.status}`;
+        }
+      } catch (e) {
+        lastError = e.message;
+      }
+
+      // Strategy 2: If server parse failed or returned no courses, parse locally via PDF.js!
+      if (!data || !data.courses || data.courses.length === 0) {
+        try {
+          data = await parsePdfClientSide(file);
+        } catch (clientErr) {
+          console.warn('Client-side PDF parse error:', clientErr);
+          if (!lastError) lastError = clientErr.message;
+        }
+      }
+
+      if (data && data.courses && data.courses.length > 0) {
+        displayMarksheetInference(data);
+      } else {
+        showMarksheetError(lastError || 'Could not detect course results from the uploaded PDF. Please make sure this is an official SEC marksheet PDF.');
+      }
+    }
+
+    async function parsePdfClientSide(file) {
+      if (!window.pdfjsLib) throw new Error('PDF.js library not loaded');
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdf.worker.min.js';
+
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer, disableFontFace: true }).promise;
+
+      let fullText = '';
+      for (let p = 1; p <= pdf.numPages; p++) {
+        const page = await pdf.getPage(p);
+        const content = await page.getTextContent();
+        const rows = [];
+        content.items.forEach(item => {
+          if (!item.str || !item.str.trim()) return;
+          const y = item.transform[5];
+          const x = item.transform[4];
+          let matchedRow = rows.find(r => Math.abs(r.y - y) <= 4);
+          if (!matchedRow) {
+            matchedRow = { y, items: [] };
+            rows.push(matchedRow);
+          }
+          matchedRow.items.push({ x, str: item.str });
+        });
+        rows.sort((a, b) => b.y - a.y);
+        const pageLines = rows.map(r => {
+          r.items.sort((a, b) => a.x - b.x);
+          return r.items.map(i => i.str).join(' ');
+        });
+        fullText += pageLines.join('\n') + '\n';
+      }
+
+      const studentInfo = {
+        college: 'Saveetha Engineering College (Autonomous)',
+        exam_session: '',
+        student_name: '',
+        reg_no: '',
+        semester: '',
+        program: '',
+        total_registered: 0,
+        total_completed: 0
+      };
+
+      const courses = [];
+      const lines = fullText.split('\n').map(l => l.trim()).filter(Boolean);
+
+      lines.forEach((line, idx) => {
+        if (line.includes('End Semester Examination')) {
+          studentInfo.exam_session = line;
+        } else if (line.includes('Student Name:') || line.includes('Reg. No.:')) {
+          const nm = line.match(/Student Name:\s*([A-Za-z\s]+?)(?:Reg\. No\.:|$)/i);
+          const rm = line.match(/Reg\. No\.:\s*([0-9]+)/i);
+          if (nm) {
+            let sName = nm[1].trim();
+            if (idx + 1 < lines.length && !lines[idx+1].includes('Semester:') && !lines[idx+1].includes('Program:')) {
+              sName += ' ' + lines[idx+1];
+            }
+            studentInfo.student_name = sName;
+          }
+          if (rm) studentInfo.reg_no = rm[1].trim();
+        } else if (line.includes('Program:')) {
+          const pm = line.match(/Program:\s*(.+)/i);
+          if (pm) studentInfo.program = pm[1].trim();
+        } else if (line.includes('Credit Registered')) {
+          const cr = line.match(/Credit Registered\s*:\s*([0-9]+)/i);
+          const cc = line.match(/Credit Completed\s*:\s*([0-9]+)/i);
+          if (cr) studentInfo.total_registered = parseInt(cr[1]);
+          if (cc) studentInfo.total_completed = parseInt(cc[1]);
+        }
+
+        // Extract course results using robust regex matching
+        const codeRegex = /\b([0-9]{2}[A-Z]{2,4}[0-9]{3}|[A-Z]{2,4}[0-9]{3,4})\b/g;
+        let match;
+        while ((match = codeRegex.exec(line)) !== null) {
+          const code = match[1];
+          if (studentInfo.reg_no && code === studentInfo.reg_no) continue;
+
+          const combined = line + ' ' + (lines[idx + 1] || '');
+          const gradeMatch = combined.match(/(?:[-:\s]+)(.+?)\s+([0-9]{1,2})\s+([OABCPFW\+]+)\s+([0-9]{1,2})\s*(Pass|Fail|RA|W)?/i);
+          if (gradeMatch) {
+            let title = gradeMatch[1].trim().replace(code, '').replace(/^[-:\s]+/, '').trim();
+            if (!courses.some(c => c.course_code === code)) {
+              courses.push({
+                raw_course: `${code}-${title}`,
+                course_code: code,
+                course_title: title,
+                grade_point: gradeMatch[2],
+                grade: gradeMatch[3],
+                credits: gradeMatch[4],
+                result_status: gradeMatch[5] || 'Pass',
+                is_pass: (gradeMatch[5] || 'Pass').toLowerCase().includes('pass')
+              });
+            }
+          }
+        }
+      });
+
+      return { student_info: studentInfo, courses };
+    }
+
+    function displayMarksheetInference(data) {
+      currentInferredData = data;
+      document.getElementById('marksheetLoading').classList.add('hidden');
+      document.getElementById('marksheetInferenceResults').classList.remove('hidden');
+
+      const sInfo = data.student_info || {};
+      document.getElementById('inferStudentName').textContent = sInfo.student_name || 'Student';
+      document.getElementById('inferRegNo').textContent = sInfo.reg_no || '-';
+      document.getElementById('inferProgram').textContent = sInfo.program || 'Undergraduate Engineering';
+      document.getElementById('inferCredits').textContent = `${sInfo.total_completed || 0} Credits Completed (${sInfo.total_registered || 0} Registered)`;
+      document.getElementById('inferSessionBadge').textContent = `${sInfo.exam_session || 'End Semester Examination'} • ${sInfo.semester || ''} Semester`;
+
+      // Calculate SGPA for this semester's courses
+      let semGradedCredits = 0;
+      let semWeightedPoints = 0;
+      (data.courses || []).forEach(m => {
+        const cred = parseFloat(m.credits) || 0;
+        if (m.grade && GRADE_POINTS[m.grade] !== undefined && cred > 0) {
+          semGradedCredits += cred;
+          semWeightedPoints += (cred * GRADE_POINTS[m.grade]);
+        }
+      });
+      const semSGPA = semGradedCredits > 0 ? (semWeightedPoints / semGradedCredits).toFixed(2) : '-';
+
+      document.getElementById('inferSemesterBadge').textContent = `Semester ${modalTargetSemester}`;
+      document.getElementById('inferSGPABadge').textContent = `SGPA: ${semSGPA}`;
+
+      // Determine matching curriculum program
+      const progText = (sInfo.program || '').toLowerCase();
+      let target = currentSheet;
+
+      if (!target || !target.courses) {
+        if (progText.includes('artificial intelligence') && progText.includes('data science')) {
+          target = allSheets.find(s => s.sheet_name === 'R2019-AI&DS') || allSheets.find(s => s.sheet_name.includes('AI&DS'));
+        } else if (progText.includes('artificial intelligence') && progText.includes('machine learning')) {
+          target = allSheets.find(s => s.sheet_name === 'R2019-AI&ML') || allSheets.find(s => s.sheet_name.includes('AI&ML'));
+        } else if (progText.includes('computer science') && progText.includes('cyber')) {
+          target = allSheets.find(s => s.sheet_name.includes('CSE(CS)'));
+        } else if (progText.includes('computer science') && progText.includes('iot')) {
+          target = allSheets.find(s => s.sheet_name.includes('CSE(IoT)'));
+        } else if (progText.includes('computer science')) {
+          target = allSheets.find(s => s.sheet_name === 'R2019-CSE') || allSheets.find(s => s.sheet_name.includes('CSE'));
+        } else if (progText.includes('information technology')) {
+          target = allSheets.find(s => s.sheet_name === 'R2019-IT') || allSheets.find(s => s.sheet_name.includes('IT'));
+        } else if (progText.includes('electronics') && progText.includes('communication')) {
+          target = allSheets.find(s => s.sheet_name.includes('ECE'));
+        } else if (progText.includes('electrical')) {
+          target = allSheets.find(s => s.sheet_name.includes('EEE'));
+        } else if (progText.includes('mechanical')) {
+          target = allSheets.find(s => s.sheet_name.includes('MECH'));
+        } else if (progText.includes('civil')) {
+          target = allSheets.find(s => s.sheet_name.includes('CIVIL'));
+        } else if (progText.includes('chemical')) {
+          target = allSheets.find(s => s.sheet_name.includes('CHEM'));
+        } else if (progText.includes('biomedical')) {
+          target = allSheets.find(s => s.sheet_name.includes('BME'));
+        }
+      }
+
+      if (!target) target = allSheets.find(s => s.sheet_name === 'R2019-AI&DS') || allSheets[0];
+      currentInferredTargetSheet = target;
+
+      document.getElementById('inferTargetSheetBadge').textContent = `${target.sheet_name} - ${target.metadata.degree || target.metadata.department || ''}`;
+
+      // Match courses
+      const openElectivesSheet = allSheets.find(s => s.sheet_name === 'Open Electives');
+      const tbody = document.getElementById('inferCoursesTableBody');
+      const courses = data.courses || [];
+      document.getElementById('inferCoursesCountTitle').textContent = `Courses Inferred (${courses.length} detected)`;
+
+      tbody.innerHTML = courses.map(m => {
+        let matchedCourse = null;
+        let matchType = 'Curriculum';
+
+        if (target && target.courses) {
+          matchedCourse = target.courses.find(c => {
+            if (m.course_code && (c.code_2019 === m.course_code || c.code_2024 === m.course_code)) return true;
+            if (m.course_title && c.title.toLowerCase().trim() === m.course_title.toLowerCase().trim()) return true;
+            return false;
+          });
+        }
+
+        if (!matchedCourse && openElectivesSheet && openElectivesSheet.courses) {
+          matchedCourse = openElectivesSheet.courses.find(c => {
+            if (m.course_code && (c.code_2019 === m.course_code || c.code_2024 === m.course_code)) return true;
+            if (m.course_title && c.title.toLowerCase().trim() === m.course_title.toLowerCase().trim()) return true;
+            return false;
+          });
+          if (matchedCourse) matchType = 'Open Elective';
+        }
+
+        const cat = matchedCourse ? (matchedCourse.category || 'PC') : 'Elective';
+        const catMeta = CATEGORY_MAP[cat.split(' ')[0]] || { name: cat, bg: 'bg-[#18181B] text-white' };
+
+        return `
+          <tr class="hover:bg-[#FAF7F0] transition-colors">
+            <td class="py-2.5 px-3 font-mono text-2xs font-bold text-[#18181B]">
+              ${m.course_code || '-'}
+            </td>
+            <td class="py-2.5 px-3 font-heading font-bold text-[#18181B]">
+              ${m.course_title || m.raw_course}
+            </td>
+            <td class="py-2.5 px-2 text-center">
+              <span class="inline-block px-2 py-0.5 rounded-md font-heading font-bold text-xs bg-[#10B981] text-white border border-[#18181B]">
+                ${m.grade || 'Pass'}
+              </span>
+            </td>
+            <td class="py-2.5 px-2 text-center font-mono font-bold text-xs">
+              ${m.credits || '3'}
+            </td>
+            <td class="py-2.5 px-2">
+              <span class="text-3xs font-heading font-extrabold px-1.5 py-0.5 rounded-md border border-[#18181B] ${catMeta.bg}">
+                ${cat}
+              </span>
+            </td>
+            <td class="py-2.5 px-3">
+              ${matchedCourse ? `
+                <span class="text-3xs font-bold px-2 py-0.5 rounded-md bg-[#ECFDF5] text-[#065F46] border border-[#10B981]">
+                  Matched in ${matchType} ✓
+                </span>
+              ` : `
+                <span class="text-3xs font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-300">
+                  Elective Inferred
+                </span>
+              `}
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      renderModalSemesterPills();
+      lucide.createIcons();
+    }
+
+    function applyMarksheetProgress() {
+      if (!currentInferredData || !currentInferredTargetSheet) return;
+
+      const target = currentInferredTargetSheet;
+      if (!currentSheet || currentSheet.sheet_name !== target.sheet_name) {
+        openSheetDashboard(target.sheet_name);
+      }
+
+      const accumulate = document.getElementById('chkAccumulateProgress').checked;
+      const progress = accumulate ? loadSheetProgress(target.sheet_name) : { mode: 'regular', courses: {}, semesters: {} };
+
+      if (!progress.semesters) progress.semesters = {};
+
+      // Compute SGPA for this semester
+      let semGradedCredits = 0;
+      let semWeightedPoints = 0;
+      (currentInferredData.courses || []).forEach(m => {
+        const cred = parseFloat(m.credits) || 0;
+        if (m.grade && GRADE_POINTS[m.grade] !== undefined && cred > 0) {
+          semGradedCredits += cred;
+          semWeightedPoints += (cred * GRADE_POINTS[m.grade]);
+        }
+      });
+      const semSGPA = semGradedCredits > 0 ? (semWeightedPoints / semGradedCredits).toFixed(2) : '-';
+
+      progress.semesters[modalTargetSemester] = {
+        uploaded: true,
+        session: currentInferredData.student_info.exam_session || 'End Semester Examination',
+        credits: currentInferredData.student_info.total_completed || semGradedCredits,
+        sgpa: semSGPA,
+        courses: currentInferredData.courses || []
+      };
+
+      const openElectivesSheet = allSheets.find(s => s.sheet_name === 'Open Electives');
+      let appliedCount = 0;
+
+      currentInferredData.courses.forEach(m => {
+        let matchedCourse = null;
+
+        if (target && target.courses) {
+          matchedCourse = target.courses.find(c => {
+            if (m.course_code && (c.code_2019 === m.course_code || c.code_2024 === m.course_code)) return true;
+            if (m.course_title && c.title.toLowerCase().trim() === m.course_title.toLowerCase().trim()) return true;
+            return false;
+          });
+        }
+
+        if (matchedCourse) {
+          const key = getCourseKey(matchedCourse);
+          progress.courses[key] = {
+            status: m.is_pass ? 'completed' : 'in_progress',
+            grade: m.grade || 'A',
+            semester: modalTargetSemester
+          };
+          appliedCount++;
+        } else if (openElectivesSheet && openElectivesSheet.courses) {
+          const oeMatch = openElectivesSheet.courses.find(c => {
+            if (m.course_code && (c.code_2019 === m.course_code || c.code_2024 === m.course_code)) return true;
+            if (m.course_title && c.title.toLowerCase().trim() === m.course_title.toLowerCase().trim()) return true;
+            return false;
+          });
+          if (oeMatch) {
+            const oeSlot = target.courses.find(c => c.category === 'OE' && (!progress.courses[getCourseKey(c)] || progress.courses[getCourseKey(c)].status !== 'completed'));
+            if (oeSlot) {
+              progress.courses[getCourseKey(oeSlot)] = {
+                status: 'completed',
+                grade: m.grade || 'A+',
+                semester: modalTargetSemester
+              };
+              appliedCount++;
+            }
+          }
+        }
+      });
+
+      saveSheetProgress(target.sheet_name, progress);
+
+      updateDashboardStats();
+      renderSemesterCards();
+      renderCategoryCards();
+      renderCourseTable();
+      updateCharts();
+
+      closeMarksheetModal();
+
+      confetti({
+        particleCount: 120,
+        spread: 80,
+        origin: { y: 0.5 }
+      });
+
+      alert(`Success! Successfully applied Semester ${modalTargetSemester} marksheet (${appliedCount} courses) into ${target.sheet_name}. SGPA: ${semSGPA} and cumulative credits have been updated.`);
+    }
+
+    // --- BATCH ACTIONS ---
+    function batchMarkCoreCompleted() {
+      if (!currentSheet) return;
+      if (!confirm('Mark all Professional Core (PC), Basic Sciences (BS), and Engineering Sciences (ES) courses as Completed?')) return;
+
+      const progress = loadSheetProgress(currentSheet.sheet_name);
+      currentSheet.courses.forEach(c => {
+        const cat = (c.category || '').toUpperCase();
+        if (cat.startsWith('PC') || cat.startsWith('BS') || cat.startsWith('ES')) {
+          const key = getCourseKey(c);
+          progress.courses[key] = { status: 'completed', grade: 'A' };
+        }
+      });
+
+      saveSheetProgress(currentSheet.sheet_name, progress);
+      updateDashboardStats();
+      renderCategoryCards();
+      renderCourseTable();
+      updateCharts();
+    }
+
+    function batchMark1stYearCompleted() {
+      if (!currentSheet) return;
+      if (!confirm('Mark all 1st Year courses (Humanities HS, Basic Sciences BS, Engineering Sciences ES) as Completed?')) return;
+
+      const progress = loadSheetProgress(currentSheet.sheet_name);
+      currentSheet.courses.forEach(c => {
+        const cat = (c.category || '').toUpperCase();
+        if (cat.startsWith('HS') || cat.startsWith('BS') || cat.startsWith('ES')) {
+          const key = getCourseKey(c);
+          progress.courses[key] = { status: 'completed', grade: 'A' };
+        }
+      });
+
+      saveSheetProgress(currentSheet.sheet_name, progress);
+      updateDashboardStats();
+      renderCategoryCards();
+      renderCourseTable();
+      updateCharts();
+    }
+
+    function confirmResetCurrentSheet() {
+      if (!currentSheet) return;
+      if (!confirm(`Are you sure you want to reset all tracked progress for ${currentSheet.sheet_name}? This cannot be undone.`)) return;
+
+      localStorage.removeItem(getStorageKey(currentSheet.sheet_name));
+      updateDashboardStats();
+      renderCategoryCards();
+      renderCourseTable();
+      updateCharts();
+    }
+
+    function exportSheetProgressJSON() {
+      if (!currentSheet) return;
+      const progress = loadSheetProgress(currentSheet.sheet_name);
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(progress, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `sec_progress_${currentSheet.sheet_name}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    // --- VISUAL CHARTS ---
+    function toggleChartsVisibility() {
+      areChartsVisible = !areChartsVisible;
+      const cont = document.getElementById('chartsContainer');
+      const icon = document.getElementById('chartToggleIcon');
+
+      if (areChartsVisible) {
+        cont.classList.remove('hidden');
+        icon.classList.add('rotate-180');
+        updateCharts();
+      } else {
+        cont.classList.add('hidden');
+        icon.classList.remove('rotate-180');
+      }
+    }
+
+    function updateCharts() {
+      if (!areChartsVisible || !currentSheet) return;
+
+      const progress = loadSheetProgress(currentSheet.sheet_name);
+
+      const categories = currentSheet.credit_requirements ? 
+        currentSheet.credit_requirements.filter(r => r.category !== 'TOTAL') : [];
+
+      const labels = categories.map(c => c.category);
+      const targetData = categories.map(c => studentMode === 'lateral' ? (c.lateral_credits || c.regular_credits || 0) : (c.regular_credits || 0));
+
+      const earnedByCat = {};
+      currentSheet.courses.forEach(c => {
+        const p = progress.courses[getCourseKey(c)];
+        if (p && p.status === 'completed') {
+          const cat = (c.category || 'PC').split(' ')[0];
+          earnedByCat[cat] = (earnedByCat[cat] || 0) + (c.total_credits || 0);
+        }
+      });
+      const earnedData = categories.map(c => earnedByCat[c.category] || 0);
+
+      // Render Bar Chart
+      const ctxBar = document.getElementById('categoryBarChart');
+      if (ctxBar) {
+        if (chartsInstance.bar) chartsInstance.bar.destroy();
+        chartsInstance.bar = new Chart(ctxBar, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: 'Credits Earned',
+                data: earnedData,
+                backgroundColor: '#FF5A5F',
+                borderColor: '#18181B',
+                borderWidth: 2,
+                borderRadius: 4
+              },
+              {
+                label: 'Credits Required',
+                data: targetData,
+                backgroundColor: '#FAF7F0',
+                borderColor: '#18181B',
+                borderWidth: 2,
+                borderRadius: 4
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11, family: 'Space Grotesk', weight: 'bold' } } }
+            },
+            scales: {
+              y: { beginAtZero: true, grid: { color: '#E4E4E7' } },
+              x: { grid: { display: false } }
+            }
+          }
+        });
+      }
+
+      // Render Doughnut Chart
+      let completed = 0, inProgress = 0, pending = 0;
+      currentSheet.courses.forEach(c => {
+        const p = progress.courses[getCourseKey(c)];
+        if (p && p.status === 'completed') completed++;
+        else if (p && p.status === 'in_progress') inProgress++;
+        else pending++;
+      });
+
+      const ctxDoughnut = document.getElementById('statusDoughnutChart');
+      if (ctxDoughnut) {
+        if (chartsInstance.doughnut) chartsInstance.doughnut.destroy();
+        chartsInstance.doughnut = new Chart(ctxDoughnut, {
+          type: 'doughnut',
+          data: {
+            labels: ['Completed', 'In Progress', 'Not Started'],
+            datasets: [{
+              data: [completed, inProgress, pending],
+              backgroundColor: ['#10B981', '#D97706', '#FAF7F0'],
+              borderWidth: 2,
+              borderColor: '#18181B'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11, family: 'Space Grotesk', weight: 'bold' } } }
+            },
+            cutout: '65%'
+          }
+        });
+      }
+    }
+  </script>
+</body>
+</html>
